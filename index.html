@@ -113,6 +113,7 @@ textarea{resize:vertical;min-height:3.2rem}
 .codebox b.code{font-family:ui-monospace,Consolas,monospace;font-size:1.5rem;letter-spacing:.2em;color:var(--accent);user-select:all}
 .adminbar{background:var(--brand);color:var(--brand-fg);border-radius:6px;padding:6px 12px;font-size:.85rem;display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:10px}
 .adminbar .lnk{color:var(--gold)}
+a.lnk{text-decoration:underline;font-size:.82rem}
 footer{display:flex;justify-content:center;gap:12px;align-items:center;flex-wrap:wrap;color:var(--muted);font-size:.85rem}
 footer form{display:flex;gap:6px;margin:0;align-items:center}
 footer input{width:11rem}
@@ -158,7 +159,7 @@ footer input{width:11rem}
       <section class="panel dayinfo" aria-live="polite">
         <h2 id="dayTitle"></h2>
         <div id="dayBody"></div>
-        <div class="adminbar" id="adminbar" hidden><span>وضع المشرف: تقدر تعدّل أي حجز وتلغيه.</span><button class="lnk" id="adminOut" type="button">خروج</button></div>
+        <div class="adminbar" id="adminbar" hidden><span>وضع المشرف: تقدر تعدّل أي حجز وتلغيه.</span><a class="lnk" href="admin.html">صفحة الإدارة</a><button class="lnk" id="adminOut" type="button">خروج</button></div>
       </section>
 
       <section class="panel" id="formPanel">
@@ -197,7 +198,7 @@ footer input{width:11rem}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="config.js"></script>
 <script>
-const ACTIVITIES = ['رحلة','كورس','خلوة','معسكر','مؤتمر','حفلة','مسرح','يوم روحي','يوم رياضي','كرنفال','قافلة'];
+let ACTIVITIES = ['رحلة','كورس','خلوة','معسكر','مؤتمر','حفلة','مسرح','يوم روحي','يوم رياضي','كرنفال','قافلة'];
 const MONTHS = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
 const DOW = ['السبت','الأحد','الإثنين','الثلاثاء','الأربعاء','الخميس','الجمعة'];
 const nf = new Intl.NumberFormat('ar-EG',{useGrouping:false});
@@ -227,7 +228,8 @@ const saveCodes = () => { try { localStorage.setItem('church-cal-codes', JSON.st
 
 try { $('fName').value = localStorage.getItem('church-cal-name') || ''; } catch(e){}
 $('fDate').value = sel;
-$('acts').innerHTML = ACTIVITIES.map(a=>`<option value="${a}">`).join('');
+const setActivities = () => { $('acts').innerHTML = ACTIVITIES.map(a=>`<option value="${esc(a)}">`).join(''); };
+setActivities();
 
 function setServices(list){
   SERVICES = list; SV = Object.fromEntries(list.map(s=>[s.id,s]));
@@ -240,10 +242,12 @@ function setBookings(list){
 }
 
 /* كل خميس محجوز لاجتماع الشماسية الأسبوعي (٦ لـ٩ مساءً)، إلا لو اليوم فيه حجز فعلي. بيتولّد هنا ومش بيتخزّن. */
+let exceptions = [];
+const isException = k => exceptions.some(x=>k>=x.from && k<=x.to);
 const isThu = k => parse(k).getDay()===4;
 function dayList(k){
   const real = byDate[k]||[];
-  if (isThu(k) && !real.length) return [{id:'w-'+k, date:k, service:'dia', name:'اجتماع الشماسية الأسبوعي', activity:'اجتماع أسبوعي', place:'', note:'كل خميس من ٦ لـ٩ مساءً', notifyDate:'', virtual:true}];
+  if (isThu(k) && !real.length && !isException(k)) return [{id:'w-'+k, date:k, service:'dia', name:'اجتماع الشماسية الأسبوعي', activity:'اجتماع أسبوعي', place:'', note:'كل خميس من ٦ لـ٩ مساءً', notifyDate:'', virtual:true}];
   return real;
 }
 
@@ -254,7 +258,7 @@ function evaluate(date, service, excludeId){
   const list = (byDate[date] || []).filter(b=>b.id!==excludeId);
   const dia = list.find(b=>b.service==='dia');
   if (dia) return {kind:'locked', who:dia};
-  if (isThu(date) && !list.length && service!=='dia') return {kind:'weekly'};
+  if (isThu(date) && !list.length && service!=='dia' && !isException(date)) return {kind:'weekly'};
   if (service==='dia' && list.length) return {kind:'needsFree', list};
   const dup = list.find(b=>b.service===service);
   if (dup) return {kind:'dup', who:dup};
@@ -366,7 +370,13 @@ function showCode(code){
   $('hideCode').onclick = ()=>{ box.hidden = true; };
 }
 
-async function reloadBookings(){ setBookings(await rpc('get_bookings')); }
+async function reloadBookings(){
+  setBookings(await rpc('get_bookings'));
+  try {
+    const {data} = await sb.from('weekly_exceptions').select('from_date,to_date');
+    if (data) exceptions = data.map(x=>({from:x.from_date, to:x.to_date}));
+  } catch(e){}
+}
 
 $('grid').addEventListener('click', e=>{ const b=e.target.closest('[data-d]'); if(b) select(b.dataset.d, true); });
 $('prev').onclick = ()=>{ view = new Date(view.getFullYear(), view.getMonth()-1, 1); renderCal(); };
@@ -440,6 +450,10 @@ async function start(){
     const {data, error} = await sb.from('services').select('id,name,hue,exclusive').order('sort');
     if (error) throw error;
     setServices(data.map(s=>({id:s.id, name:s.name, h:s.hue, exclusive:s.exclusive})));
+    try {
+      const {data:ac} = await sb.from('activities').select('name').order('sort');
+      if (ac && ac.length){ ACTIVITIES = ac.map(a=>a.name); setActivities(); }
+    } catch(_){}
     await reloadBookings();
     TODAY = cairoToday(); sel = TODAY; view = parse(TODAY); view.setDate(1); $('fDate').value = sel;
     loaded = true; $('loading').hidden = true;

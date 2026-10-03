@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>إدارة كاليندر الكنيسة</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap">
+<style>
+/* Layout: right-to-left. A burgundy and gold banner with a Coptic cross, then the month grid beside a side panel (selected day + booking form). */
+:root{
+  --bg:#f3eee4; --surface:#fffdf8; --surface2:#f1eadb; --fg:#2b1b1d; --muted:#6b5a58; --line:#dccfb6;
+  --brand:#6e1220; --brand-fg:#f7ecd2; --gold:#c9a24a; --gold-deep:#8f6b1c;
+  --accent:#7b1626; --btn-bg:#7b1626; --btn-fg:#f7ecd2;
+  --lock:#8a1626; --lock-bg:#f3d9d6; --ok:#25623f; --warn-bg:#fbefcf; --warn-fg:#6b4a00;
+  --cs:62%; --cl:90%; --ct:24%;
+  --font-display:"Amiri","Noto Naskh Arabic","Traditional Arabic",serif;
+  --font-body:"IBM Plex Sans Arabic","Segoe UI",Tahoma,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#190f13; --surface:#25151b; --surface2:#2f1b23; --fg:#f2e7d2; --muted:#b5a38c; --line:#4a2c36;
+  --brand:#4a0f1a; --brand-fg:#f3dfae; --gold:#d6b25e; --gold-deep:#d6b25e;
+  --accent:#e0bb64; --btn-bg:#9a2236; --btn-fg:#fbf0d6;
+  --lock:#ff9aa7; --lock-bg:#3d1a25; --ok:#7bd6a4; --warn-bg:#3b2f10; --warn-fg:#f3d58a;
+  --cs:40%; --cl:24%; --ct:86%; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#190f13; --surface:#25151b; --surface2:#2f1b23; --fg:#f2e7d2; --muted:#b5a38c; --line:#4a2c36;
+  --brand:#4a0f1a; --brand-fg:#f3dfae; --gold:#d6b25e; --gold-deep:#d6b25e;
+  --accent:#e0bb64; --btn-bg:#9a2236; --btn-fg:#fbf0d6;
+  --lock:#ff9aa7; --lock-bg:#3d1a25; --ok:#7bd6a4; --warn-bg:#3b2f10; --warn-fg:#f3d58a;
+  --cs:40%; --cl:24%; --ct:86%; color-scheme:dark}
+
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0}
+body{background:var(--bg);color:var(--fg);font:15px/1.65 var(--font-body);padding-inline:16px;padding-block:0 40px;direction:rtl}
+.wrap{max-width:1180px;margin-inline:auto;display:grid;gap:20px}
+h1,h2,h3{font-family:var(--font-display);margin:0;text-wrap:balance;line-height:1.4}
+h2{font-size:1.25rem;font-weight:700} h3{font-size:1rem}
+
+/* banner */
+.band{background:var(--brand);color:var(--brand-fg);margin-inline:-16px;padding:18px 16px 16px;text-align:center;border-bottom:3px double var(--gold)}
+.band-in{max-width:1180px;margin-inline:auto;display:grid;gap:4px;justify-items:center}
+.kicker{font-family:var(--font-display);font-size:1rem;color:var(--gold);letter-spacing:.02em}
+.cross{width:2.6rem;height:2.6rem;color:var(--gold)}
+.band h1{font-size:1.75rem;font-weight:700}
+.band .loc{font-family:var(--font-display);font-size:1.1rem;color:var(--gold)}
+.band p{margin:.4rem 0 0;max-width:60ch;font-size:.92rem;opacity:.92}
+.strip{height:12px;margin-inline:-16px;background:var(--surface2) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='22' height='12'%3E%3Cpath d='M11 1.5v9M6.5 6h9' stroke='%23c9a24a' stroke-width='1.6'/%3E%3C/svg%3E") repeat-x center;border-bottom:1px solid var(--line)}
+
+.main{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(0,1fr);gap:20px;align-items:start}
+@media(max-width:900px){.main{grid-template-columns:minmax(0,1fr)}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:16px;min-width:0;box-shadow:0 1px 0 var(--gold) inset}
+.side{display:grid;gap:16px;min-width:0}
+
+.cal-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--gold)}
+.cal-head h2{font-size:1.6rem;color:var(--accent)}
+.nav{display:flex;gap:6px}
+button{font:inherit;color:inherit;cursor:pointer}
+.btn{border:1px solid var(--line);background:var(--surface2);border-radius:6px;padding:.35rem .8rem}
+.btn:hover{border-color:var(--gold-deep)}
+.btn.primary{background:var(--btn-bg);color:var(--btn-fg);border-color:var(--gold);font-weight:600;padding:.6rem 1rem}
+.btn.primary:disabled{opacity:.5;cursor:not-allowed}
+.btn.ghost{background:none}
+:focus-visible{outline:2px solid var(--gold-deep);outline-offset:2px}
+
+.grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+.dow{font-family:var(--font-display);font-size:.95rem;color:var(--accent);text-align:center;padding-block:4px;font-weight:700}
+.day{position:relative;min-height:5.8rem;border:1px solid var(--line);border-radius:5px;background:var(--surface);padding:4px;text-align:start;display:flex;flex-direction:column;gap:3px;min-width:0;overflow:hidden}
+.day.out{opacity:.38}
+.day.past{background:var(--surface2)}
+.day.today .num{background:var(--brand);color:var(--brand-fg)}
+.day.sel{outline:2px solid var(--gold);outline-offset:1px}
+.day.locked{background:repeating-linear-gradient(135deg,var(--lock-bg) 0 8px,var(--surface) 8px 16px);border-color:var(--lock)}
+.num{align-self:flex-start;font-size:.8rem;min-width:1.5rem;height:1.5rem;display:grid;place-items:center;border-radius:99px;font-variant-numeric:tabular-nums}
+.chips{display:flex;flex-direction:column;gap:2px;min-width:0}
+.chip{display:block;font-size:.72rem;line-height:1.35;padding:1px 6px;border-radius:4px;background:hsl(var(--h) var(--cs) var(--cl));color:hsl(var(--h) 35% var(--ct));white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.more{font-size:.7rem;color:var(--muted)}
+@media(max-width:640px){
+  .day{min-height:3.4rem;padding:3px}
+  .chips{flex-direction:row;flex-wrap:wrap;gap:3px}
+  .chip{width:.6rem;height:.6rem;padding:0;border-radius:50%;font-size:0;background:hsl(var(--h) 60% 52%)}
+  .more{display:none}
+  .band h1{font-size:1.35rem}
+}
+
+.legend{display:flex;flex-wrap:wrap;gap:6px 10px;margin-top:14px;font-size:.8rem;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:5px}
+.legend i{width:.7rem;height:.7rem;border-radius:3px;background:hsl(var(--h) 60% 52%)}
+
+.dayinfo h2{color:var(--accent)}
+.dayinfo ul{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:8px}
+.dayinfo li{display:flex;gap:10px;align-items:flex-start;justify-content:space-between;border:1px solid var(--line);border-radius:6px;padding:8px 10px;background:var(--surface2)}
+.dayinfo .who{color:var(--muted);font-size:.85rem}
+.dayinfo .note{font-size:.84rem;margin-top:2px}
+.tag{display:inline-block;font-size:.76rem;padding:0 8px;border-radius:99px;background:hsl(var(--h) var(--cs) var(--cl));color:hsl(var(--h) 35% var(--ct))}
+.acts{display:flex;flex-direction:column;align-items:flex-end;gap:2px;flex:none}
+.lnk{border:none;background:none;color:var(--accent);font-size:.82rem;padding:2px 4px;text-decoration:underline}
+.lnk.danger{color:var(--lock)}
+.empty{color:var(--muted);margin:8px 0 0;font-size:.9rem}
+.free{color:var(--ok)}
+
+form{display:grid;gap:12px;margin-top:10px}
+label{display:grid;gap:4px;font-size:.85rem;color:var(--muted)}
+input,select,textarea{font:inherit;color:var(--fg);background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:.5rem .6rem;width:100%;min-width:0}
+textarea{resize:vertical;min-height:3.2rem}
+.msg{border-radius:6px;padding:9px 12px;font-size:.88rem;line-height:1.55}
+.msg.block{background:var(--lock-bg);color:var(--lock);border:1px solid var(--lock)}
+.msg.warn{background:var(--warn-bg);color:var(--warn-fg)}
+.msg.good{background:var(--surface2);color:var(--ok)}
+.status{font-size:.82rem;color:var(--muted)}
+.editbar{display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--warn-bg);color:var(--warn-fg);border-radius:6px;padding:8px 12px;font-size:.88rem}
+.codebox{border:2px solid var(--gold);border-radius:6px;padding:12px;background:var(--surface2);display:grid;gap:6px}
+.codebox b.code{font-family:ui-monospace,Consolas,monospace;font-size:1.5rem;letter-spacing:.2em;color:var(--accent);user-select:all}
+.adminbar{background:var(--brand);color:var(--brand-fg);border-radius:6px;padding:6px 12px;font-size:.85rem;display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:10px}
+.adminbar .lnk{color:var(--gold)}
+a.lnk{text-decoration:underline;font-size:.82rem}
+footer{display:flex;justify-content:center;gap:12px;align-items:center;flex-wrap:wrap;color:var(--muted);font-size:.85rem}
+footer form{display:flex;gap:6px;margin:0;align-items:center}
+footer input{width:11rem}
+
+.admin-wrap{max-width:820px}
+.band-in .back{color:var(--gold);font-size:.9rem;text-decoration:underline}
+.sect{display:grid;gap:12px}
+.sect > p{margin:0;color:var(--muted);font-size:.88rem}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;border:1px solid var(--line);border-radius:6px;padding:8px 10px;background:var(--surface2)}
+.row .dot{width:1.1rem;height:1.1rem;border-radius:4px;flex:none;background:hsl(var(--h) 60% 52%)}
+.row input{width:auto;flex:1 1 9rem}
+.row input.num{flex:0 0 5rem}
+.row .grow{flex:1 1 10rem;min-width:0}
+.row .meta{color:var(--muted);font-size:.85rem}
+.addrow{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end}
+.addrow label{flex:1 1 8rem}
+.addrow label.sm{flex:0 0 6rem}
+.btn.sm{padding:.3rem .7rem;font-size:.85rem}
+.btn.danger{color:var(--lock);border-color:var(--lock)}
+.chips-row{display:flex;flex-wrap:wrap;gap:6px}
+.pill{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--surface2);border-radius:99px;padding:2px 4px 2px 12px}
+.pill button{border:none;background:none;color:var(--lock);font-size:1.1rem;line-height:1;padding:0 6px}
+.toast{position:sticky;bottom:12px;justify-self:center;background:var(--brand);color:var(--brand-fg);padding:.6rem 1rem;border-radius:6px;font-size:.9rem;border:1px solid var(--gold)}
+.login{display:grid;gap:10px;max-width:22rem}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="cc" viewBox="0 0 100 100">
+    <path fill="currentColor" fill-rule="evenodd" d="M40 6 50 14 60 6V40H94L86 50 94 60H60V94L50 86 40 94V60H6L14 50 6 40H40Z M50 44a6 6 0 1 0 .01 0Z"/>
+    <circle fill="currentColor" cx="24" cy="24" r="5"/><circle fill="currentColor" cx="76" cy="24" r="5"/>
+    <circle fill="currentColor" cx="24" cy="76" r="5"/><circle fill="currentColor" cx="76" cy="76" r="5"/>
+  </symbol>
+</svg>
+<header class="band">
+  <div class="band-in">
+    <svg class="cross" aria-hidden="true"><use href="#cc"/></svg>
+    <h1>إدارة الكاليندر</h1>
+    <div class="loc">كنيسة السيدة العذراء والقديس أثناسيوس - دار السلام</div>
+    <a class="back" href="index.html">رجوع للكاليندر</a>
+  </div>
+</header>
+<div class="strip" aria-hidden="true"></div>
+
+<div class="wrap admin-wrap">
+  <p class="status" id="state">جاري التحميل…</p>
+
+  <section class="panel sect" id="loginPanel" hidden>
+    <h2>دخول المشرف</h2>
+    <form class="login" id="loginForm">
+      <label>الإيميل<input id="email" type="email" autocomplete="username" dir="ltr" required></label>
+      <label>كلمة السر<input id="pass" type="password" autocomplete="current-password" dir="ltr" required></label>
+      <button class="btn primary" type="submit">دخول</button>
+      <span class="status" id="loginMsg"></span>
+    </form>
+  </section>
+
+  <div id="adminArea" hidden style="display:grid;gap:20px">
+    <section class="panel sect">
+      <h2>الخدمات</h2>
+      <p>غيّر الاسم أو اللون (رقم من 0 لـ360) أو الترتيب، واضغط حفظ. خدمة الشماسية ثابتة لأن قواعد الحجز مربوطة بيها.</p>
+      <div id="svcList" style="display:grid;gap:8px"></div>
+      <form class="addrow" id="svcAdd">
+        <label>الاسم<input id="nsName" required maxlength="40" placeholder="مثلاً: خدمة الشباب"></label>
+        <label class="sm">المعرّف<input id="nsId" required maxlength="20" dir="ltr" placeholder="youth"></label>
+        <label class="sm">اللون<input id="nsHue" type="number" min="0" max="360" value="200"></label>
+        <button class="btn primary" type="submit">أضف خدمة</button>
+      </form>
+      <p>المعرّف كلمة إنجليزي صغيرة من غير مسافات، ومينفعش يتغيّر بعد كده.</p>
+    </section>
+
+    <section class="panel sect">
+      <h2>أنواع الأنشطة</h2>
+      <p>دي الاقتراحات اللي بتظهر في خانة "النشاط" وقت الحجز.</p>
+      <div class="chips-row" id="actList"></div>
+      <form class="addrow" id="actAdd">
+        <label>نشاط جديد<input id="naName" required maxlength="40" placeholder="مثلاً: اجتماع"></label>
+        <button class="btn primary" type="submit">أضف</button>
+      </form>
+    </section>
+
+    <section class="panel sect">
+      <h2>استثناءات خميس الشماسية</h2>
+      <p>كل خميس محجوز لاجتماع الشماسية من ٦ لـ٩. في الفترات اللي هنا الخميس بيتفتح للحجز العادي (مؤتمرات الصيف، الخلوات…).</p>
+      <div id="exList" style="display:grid;gap:8px"></div>
+      <form class="addrow" id="exAdd">
+        <label class="sm">من<input id="neFrom" type="date" required></label>
+        <label class="sm">إلى<input id="neTo" type="date" required></label>
+        <label>السبب (اختياري)<input id="neWhy" maxlength="80" placeholder="مثلاً: مؤتمر الثانوي"></label>
+        <button class="btn primary" type="submit">أضف استثناء</button>
+      </form>
+    </section>
+  </div>
+  <div class="toast" id="toast" hidden></div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+const esc = s => String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const MONTHS = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+const nf = new Intl.NumberFormat('ar-EG',{useGrouping:false});
+const fmt = s => { const [y,m,d]=s.split('-').map(Number); return `${nf.format(d)} ${MONTHS[m-1]} ${nf.format(y)}`; };
+const CFG = window.APP_CONFIG || {};
+const sb = (window.supabase && CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY)
+  ? window.supabase.createClient(CFG.SUPABASE_URL, CFG.SUPABASE_ANON_KEY) : null;
+let toastTimer, pendingDel = null;
+
+function say(t){ const el=$('toast'); el.textContent=t; el.hidden=false; clearTimeout(toastTimer); toastTimer=setTimeout(()=>{el.hidden=true;},5000); }
+function fail(err, fallback){
+  const m = String(err && (err.message||err.code) || '');
+  if (err && err.code==='23503') say('مينفعش تتمسح: عليها حجوزات. لازم تلغي حجوزاتها الأول.');
+  else if (err && err.code==='23505') say('الاسم أو المعرّف ده موجود بالفعل.');
+  else if (err && (err.code==='42501' || /row-level security/i.test(m))) say('مفيش صلاحية. اتأكد إنك داخل كمشرف.');
+  else if (err && (err.code==='42P01' || /schema cache|does not exist/i.test(m))) say('لازم تشغّل ملف update-1.sql في Supabase الأول.');
+  else say(fallback || 'حصلت مشكلة، جرّب تاني.');
+}
+
+async function loadAll(){
+  const [sv, ac, ex] = await Promise.all([
+    sb.from('services').select('id,name,hue,sort').order('sort'),
+    sb.from('activities').select('name,sort').order('sort'),
+    sb.from('weekly_exceptions').select('id,from_date,to_date,reason').order('from_date'),
+  ]);
+  if (sv.error) throw sv.error;
+  renderServices(sv.data);
+  if (ac.error) { $('actList').innerHTML = '<span class="status">شغّل update-1.sql الأول.</span>'; } else renderActs(ac.data);
+  if (ex.error) { $('exList').innerHTML = '<span class="status">شغّل update-1.sql الأول.</span>'; } else renderEx(ex.data);
+}
+
+function renderServices(list){
+  window._maxSort = Math.max(0, ...list.map(s=>s.sort||0));
+  $('svcList').innerHTML = list.map(s=>{
+    if (s.id==='dia') return `<div class="row" style="--h:${s.hue}"><i class="dot"></i><span class="grow"><b>${esc(s.name)}</b></span><span class="meta">ثابتة</span></div>`;
+    return `<div class="row" data-id="${esc(s.id)}" style="--h:${s.hue}"><i class="dot"></i>
+      <input class="grow" data-f="name" value="${esc(s.name)}" maxlength="40" aria-label="اسم الخدمة">
+      <input class="num" data-f="hue" type="number" min="0" max="360" value="${s.hue}" aria-label="اللون">
+      <input class="num" data-f="sort" type="number" value="${s.sort}" aria-label="الترتيب">
+      <button class="btn sm" data-save="${esc(s.id)}" type="button">حفظ</button>
+      <button class="btn sm danger" data-del="${esc(s.id)}" type="button">${pendingDel==='s:'+s.id?'تأكيد الحذف':'حذف'}</button></div>`;
+  }).join('');
+}
+function renderActs(list){
+  $('actList').innerHTML = list.map(a=>`<span class="pill">${esc(a.name)}<button type="button" data-adel="${esc(a.name)}" aria-label="حذف ${esc(a.name)}">×</button></span>`).join('') || '<span class="status">مفيش أنشطة.</span>';
+  window._maxAct = Math.max(0, ...list.map(a=>a.sort||0));
+}
+function renderEx(list){
+  $('exList').innerHTML = list.map(x=>`<div class="row"><span class="grow"><b>${x.from_date===x.to_date?fmt(x.from_date):fmt(x.from_date)+' إلى '+fmt(x.to_date)}</b>${x.reason?' · '+esc(x.reason):''}</span>
+    <button class="btn sm danger" data-xdel="${esc(x.id)}" type="button">${pendingDel==='x:'+x.id?'تأكيد الحذف':'حذف'}</button></div>`).join('') || '<span class="status">مفيش استثناءات.</span>';
+}
+
+function askDelete(key, redo){ if (pendingDel!==key){ pendingDel=key; redo(); setTimeout(()=>{ if(pendingDel===key){ pendingDel=null; redo(); } },4000); return false; } pendingDel=null; return true; }
+
+$('svcList').addEventListener('input', e=>{
+  const row = e.target.closest('.row'); if (row && e.target.dataset.f==='hue') row.style.setProperty('--h', e.target.value||0);
+});
+$('svcList').addEventListener('click', async e=>{
+  const sv = e.target.closest('[data-save]'), dl = e.target.closest('[data-del]');
+  try {
+    if (sv){
+      const row = sv.closest('.row'), id = sv.dataset.save;
+      const name = row.querySelector('[data-f=name]').value.trim();
+      if (!name) { say('اكتب اسم الخدمة.'); return; }
+      const {error} = await sb.from('services').update({name, hue:+row.querySelector('[data-f=hue]').value||0, sort:+row.querySelector('[data-f=sort]').value||0}).eq('id', id);
+      if (error) throw error; say('اتحفظت الخدمة.');
+    } else if (dl){
+      const id = dl.dataset.del;
+      if (!askDelete('s:'+id, loadAll)) return;
+      const {error} = await sb.from('services').delete().eq('id', id);
+      if (error) throw error; say('اتحذفت الخدمة.'); await loadAll();
+    }
+  } catch(err){ fail(err); }
+});
+$('svcAdd').addEventListener('submit', async e=>{
+  e.preventDefault();
+  const id = $('nsId').value.trim().toLowerCase();
+  if (!/^[a-z][a-z0-9_]{1,19}$/.test(id)) { say('المعرّف لازم حروف إنجليزي صغيرة وأرقام بس، ويبدأ بحرف.'); return; }
+  const {error} = await sb.from('services').insert({id, name:$('nsName').value.trim(), hue:+$('nsHue').value||0, sort:(window._maxSort||0)+1});
+  if (error) return fail(error);
+  $('svcAdd').reset(); $('nsHue').value = 200; say('اتضافت الخدمة.'); loadAll().catch(fail);
+});
+
+$('actList').addEventListener('click', async e=>{
+  const b = e.target.closest('[data-adel]'); if(!b) return;
+  const {error} = await sb.from('activities').delete().eq('name', b.dataset.adel);
+  if (error) return fail(error); loadAll().catch(fail);
+});
+$('actAdd').addEventListener('submit', async e=>{
+  e.preventDefault();
+  const {error} = await sb.from('activities').insert({name:$('naName').value.trim(), sort:(window._maxAct||0)+1});
+  if (error) return fail(error);
+  $('actAdd').reset(); say('اتضاف النشاط.'); loadAll().catch(fail);
+});
+
+$('exList').addEventListener('click', async e=>{
+  const b = e.target.closest('[data-xdel]'); if(!b) return;
+  const id = b.dataset.xdel;
+  if (!askDelete('x:'+id, loadAll)) return;
+  const {error} = await sb.from('weekly_exceptions').delete().eq('id', id);
+  if (error) return fail(error); say('اتحذف الاستثناء.'); loadAll().catch(fail);
+});
+$('neFrom').addEventListener('change', ()=>{ if (!$('neTo').value || $('neTo').value < $('neFrom').value) $('neTo').value = $('neFrom').value; });
+$('exAdd').addEventListener('submit', async e=>{
+  e.preventDefault();
+  const from_date = $('neFrom').value, to_date = $('neTo').value;
+  if (to_date < from_date) { say('تاريخ النهاية لازم يكون بعد البداية.'); return; }
+  const {error} = await sb.from('weekly_exceptions').insert({from_date, to_date, reason:$('neWhy').value.trim()});
+  if (error) return fail(error);
+  $('exAdd').reset(); say('اتضاف الاستثناء.'); loadAll().catch(fail);
+});
+
+function show(mode){
+  $('loginPanel').hidden = mode!=='login';
+  $('adminArea').hidden = mode!=='admin';
+  $('state').hidden = mode!=='msg';
+}
+async function enter(){
+  const {data, error} = await sb.rpc('is_admin');
+  if (error || !data){ await sb.auth.signOut(); return false; }
+  show('admin'); await loadAll(); return true;
+}
+$('loginForm').addEventListener('submit', async e=>{
+  e.preventDefault(); $('loginMsg').textContent = '';
+  const {error} = await sb.auth.signInWithPassword({email:$('email').value.trim(), password:$('pass').value});
+  if (error) { $('loginMsg').textContent = 'الإيميل أو كلمة السر غلط.'; return; }
+  if (!(await enter())) $('loginMsg').textContent = 'الحساب ده مش مشرف.';
+});
+(async()=>{
+  if (!sb){ $('state').textContent = 'الموقع محتاج إعداد: املا config.js.'; return; }
+  try {
+    const {data:{session}} = await sb.auth.getSession();
+    if (session && await enter()) return;
+    show('login');
+  } catch(err){ $('state').textContent = 'مقدرناش نتصل بقاعدة البيانات.'; show('msg'); }
+})();
+</script>
+</body>
+</html>
