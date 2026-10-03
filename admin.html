@@ -138,6 +138,10 @@ footer input{width:11rem}
 .pill button{border:none;background:none;color:var(--lock);font-size:1.1rem;line-height:1;padding:0 6px}
 .toast{position:sticky;bottom:12px;justify-self:center;background:var(--brand);color:var(--brand-fg);padding:.6rem 1rem;border-radius:6px;font-size:.9rem;border:1px solid var(--gold)}
 .login{display:grid;gap:10px;max-width:22rem}
+.signup{margin-top:6px}
+.signup summary{cursor:pointer;color:var(--accent);margin-bottom:10px}
+.badge{font-size:.75rem;padding:0 8px;border-radius:99px;background:var(--surface);border:1px solid var(--line)}
+.badge.on{background:var(--brand);color:var(--brand-fg);border-color:var(--gold)}
 </style>
 </head>
 <body>
@@ -169,6 +173,16 @@ footer input{width:11rem}
       <button class="btn primary" type="submit">دخول</button>
       <span class="status" id="loginMsg"></span>
     </form>
+    <details class="signup">
+      <summary>معنديش حساب. اعمل حساب جديد</summary>
+      <form class="login" id="signupForm">
+        <label>الإيميل<input id="suEmail" type="email" autocomplete="email" dir="ltr" required></label>
+        <label>كلمة السر (٦ حروف على الأقل)<input id="suPass" type="password" minlength="6" autocomplete="new-password" dir="ltr" required></label>
+        <button class="btn" type="submit">اعمل الحساب</button>
+        <span class="status" id="suMsg"></span>
+      </form>
+      <p class="status">الحساب الجديد مبيبقاش مشرف غير لما مشرف تاني يوافق عليه من صفحة الإدارة.</p>
+    </details>
   </section>
 
   <div id="adminArea" hidden style="display:grid;gap:20px">
@@ -206,6 +220,12 @@ footer input{width:11rem}
         <button class="btn primary" type="submit">أضف استثناء</button>
       </form>
     </section>
+
+    <section class="panel sect">
+      <h2>المستخدمين</h2>
+      <p>اللي عمل حساب بيظهر هنا. اضغط "اعمله مشرف" عشان يقدر يعدّل الخدمات والحجوزات.</p>
+      <div id="userList" style="display:grid;gap:8px"></div>
+    </section>
   </div>
   <div class="toast" id="toast" hidden></div>
 </div>
@@ -220,7 +240,7 @@ const fmt = s => { const [y,m,d]=s.split('-').map(Number); return `${nf.format(d
 const CFG = window.APP_CONFIG || {};
 const sb = (window.supabase && CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY)
   ? window.supabase.createClient(CFG.SUPABASE_URL, CFG.SUPABASE_ANON_KEY) : null;
-let toastTimer, pendingDel = null;
+let toastTimer, pendingDel = null, myId = null;
 
 function say(t){ const el=$('toast'); el.textContent=t; el.hidden=false; clearTimeout(toastTimer); toastTimer=setTimeout(()=>{el.hidden=true;},5000); }
 function fail(err, fallback){
@@ -242,7 +262,31 @@ async function loadAll(){
   renderServices(sv.data);
   if (ac.error) { $('actList').innerHTML = '<span class="status">شغّل update-1.sql الأول.</span>'; } else renderActs(ac.data);
   if (ex.error) { $('exList').innerHTML = '<span class="status">شغّل update-1.sql الأول.</span>'; } else renderEx(ex.data);
+  loadUsers();
 }
+
+async function loadUsers(){
+  const {data, error} = await sb.rpc('list_users');
+  if (error) { $('userList').innerHTML = '<span class="status">شغّل update-2.sql الأول.</span>'; return; }
+  $('userList').innerHTML = (data||[]).map(u=>`<div class="row"><span class="grow" dir="ltr" style="text-align:right">${esc(u.email)}</span>
+    <span class="badge ${u.is_admin?'on':''}">${u.is_admin?'مشرف':'في الانتظار'}</span>
+    ${u.id===myId ? '<span class="meta">إنت</span>' : `<button class="btn sm ${u.is_admin?'danger':''}" data-uid="${esc(u.id)}" data-make="${u.is_admin?'0':'1'}" type="button">${u.is_admin?'شيل الإشراف':'اعمله مشرف'}</button>`}</div>`).join('') || '<span class="status">مفيش مستخدمين.</span>';
+}
+$('userList').addEventListener('click', async e=>{
+  const b = e.target.closest('[data-uid]'); if (!b) return;
+  const {data, error} = await sb.rpc('set_admin', {p_user:b.dataset.uid, p_make:b.dataset.make==='1'});
+  if (error) return fail(error);
+  if (!data.ok) return say(data.error);
+  say(b.dataset.make==='1' ? 'اتحوّل لمشرف.' : 'اتشال الإشراف.'); loadUsers();
+});
+$('signupForm').addEventListener('submit', async e=>{
+  e.preventDefault(); $('suMsg').textContent = '';
+  const {data, error} = await sb.auth.signUp({email:$('suEmail').value.trim(), password:$('suPass').value});
+  if (error) { $('suMsg').textContent = /registered|exists/i.test(error.message) ? 'الإيميل ده عنده حساب بالفعل.' : 'مقدرناش نعمل الحساب: ' + error.message; return; }
+  if (data.session) { await sb.auth.signOut(); }
+  $('suMsg').textContent = 'اتعمل الحساب. لو وصلك إيميل تأكيد افتحه، وبعدين استنى مشرف يوافق عليك.';
+  $('signupForm').reset();
+});
 
 function renderServices(list){
   window._maxSort = Math.max(0, ...list.map(s=>s.sort||0));
@@ -333,6 +377,7 @@ function show(mode){
 async function enter(){
   const {data, error} = await sb.rpc('is_admin');
   if (error || !data){ await sb.auth.signOut(); return false; }
+  try { myId = (await sb.auth.getUser()).data.user?.id || null; } catch(_){}
   show('admin'); await loadAll(); return true;
 }
 $('loginForm').addEventListener('submit', async e=>{
