@@ -80,6 +80,7 @@ button{font:inherit;color:inherit;cursor:pointer}
   .chips{flex-direction:row;flex-wrap:wrap;gap:3px}
   .chip{width:.6rem;height:.6rem;padding:0;border-radius:50%;font-size:0;background:hsl(var(--h) 60% 52%)}
   .more{display:none}
+  .chip.pend{background:transparent;border:2px solid hsl(var(--h) 60% 52%)}
   .band h1{font-size:1.35rem}
 }
 
@@ -114,6 +115,10 @@ textarea{resize:vertical;min-height:3.2rem}
 .adminbar{background:var(--brand);color:var(--brand-fg);border-radius:6px;padding:6px 12px;font-size:.85rem;display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:10px}
 .adminbar .lnk{color:var(--gold)}
 a.lnk{text-decoration:underline;font-size:.82rem}
+.chip.pend{background:transparent;border:1px dashed hsl(var(--h) 50% 45%);color:var(--fg)}
+.pendtag{display:inline-block;font-size:.76rem;color:var(--warn-fg);background:var(--warn-bg);border-radius:4px;padding:0 6px;margin-top:2px}
+.req{display:grid;gap:2px;border:1px solid var(--line);border-radius:6px;padding:8px 10px;background:var(--surface2);font-size:.88rem}
+.req + .req{margin-top:8px}
 footer{display:flex;justify-content:center;gap:12px;align-items:center;flex-wrap:wrap;color:var(--muted);font-size:.85rem}
 footer form{display:flex;gap:6px;margin:0;align-items:center}
 footer input{width:11rem}
@@ -134,7 +139,7 @@ footer input{width:11rem}
     <svg class="cross" aria-hidden="true"><use href="#cc"/></svg>
     <h1>كنيسة السيدة العذراء والقديس أثناسيوس الرسولي</h1>
     <div class="loc">دار السلام</div>
-    <p>اختار اليوم وسجّل حجزك. الخدمات المختلفة تقدر تحجز نفس اليوم، لكن يوم خدمة الشماسية مقفول على أي خدمة تانية.</p>
+    <p>اختار اليوم وسجّل حجزك. الخدمات المختلفة تقدر تحجز نفس اليوم، ويوم خدمة الشماسية مقفول على أي خدمة تانية. حجز الخميس بيروح لأمين الشمامسة للموافقة.</p>
   </div>
 </header>
 <div class="strip" aria-hidden="true"></div>
@@ -159,8 +164,10 @@ footer input{width:11rem}
       <section class="panel dayinfo" aria-live="polite">
         <h2 id="dayTitle"></h2>
         <div id="dayBody"></div>
-        <div class="adminbar" id="adminbar" hidden><span>وضع المشرف: تقدر تعدّل أي حجز وتلغيه.</span><a class="lnk" href="admin.html">صفحة الإدارة</a><button class="lnk" id="adminOut" type="button">خروج</button></div>
+        <div class="adminbar" id="adminbar" hidden><span id="adminTxt">وضع المشرف: تقدر تعدّل أي حجز وتلغيه.</span><a class="lnk" id="adminLink" href="admin.html">صفحة الإدارة</a><a class="lnk" id="apprLink" href="approvals.html">طلبات الخميس</a><button class="lnk" id="adminOut" type="button">خروج</button></div>
       </section>
+
+      <section class="panel" id="myReq" hidden><h2>طلباتي</h2><div id="myReqBody"></div></section>
 
       <section class="panel" id="formPanel">
         <h2 id="formTitle">حجز جديد</h2>
@@ -201,7 +208,7 @@ footer input{width:11rem}
 let ACTIVITIES = ['رحلة','كورس','خلوة','معسكر','مؤتمر','حفلة','مسرح','يوم روحي','يوم رياضي','كرنفال','قافلة'];
 const MONTHS = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
 const DOW = ['السبت','الأحد','الإثنين','الثلاثاء','الأربعاء','الخميس','الجمعة'];
-const nf = new Intl.NumberFormat('ar-EG',{useGrouping:false});
+const nf = new Intl.NumberFormat('en-US',{useGrouping:false});
 const $ = id => document.getElementById(id);
 const esc = s => String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const pad = n => String(n).padStart(2,'0');
@@ -221,7 +228,8 @@ async function rpc(fn, args){ const {data, error} = await sb.rpc(fn, args); if (
 
 let SERVICES = [], SV = {}, bookings = [], byDate = {}, loaded = false, saving = false;
 let sel = todayIso(), view = new Date(); view.setDate(1);
-let toastTimer = null, editing = null, isAdmin = false, pendingCancel = null;
+let toastTimer = null, editing = null, isAdmin = false, isApprover = false, pendingCount = 0, pendingCancel = null;
+const applyRole = r => { isAdmin = r==='admin'; isApprover = r==='admin' || r==='approver'; };
 let codes = {};
 try { codes = JSON.parse(localStorage.getItem('church-cal-codes') || '{}') || {}; } catch(e){}
 const saveCodes = () => { try { localStorage.setItem('church-cal-codes', JSON.stringify(codes)); } catch(e){} };
@@ -241,28 +249,31 @@ function setBookings(list){
   for (const b of bookings) (byDate[b.date] ||= []).push(b);
 }
 
-/* كل خميس محجوز لاجتماع الشماسية الأسبوعي (٦ لـ٩ مساءً)، إلا لو اليوم فيه حجز فعلي. بيتولّد هنا ومش بيتخزّن. */
+/* كل خميس محجوز لاجتماع الشماسية الأسبوعي (6 لـ 9 مساءً)، إلا لو اليوم فيه حجز فعلي. بيتولّد هنا ومش بيتخزّن. */
 let exceptions = [];
 const isException = k => exceptions.some(x=>k>=x.from && k<=x.to);
 const isThu = k => parse(k).getDay()===4;
 function dayList(k){
-  const real = byDate[k]||[];
-  if (isThu(k) && !real.length && !isException(k)) return [{id:'w-'+k, date:k, service:'dia', name:'اجتماع الشماسية الأسبوعي', activity:'اجتماع أسبوعي', place:'', note:'كل خميس من ٦ لـ٩ مساءً', notifyDate:'', virtual:true}];
-  return real;
+  const all = byDate[k]||[];
+  const out = [];
+  if (isThu(k) && !all.some(b=>b.status!=='pending') && !isException(k))
+    out.push({id:'w-'+k, date:k, service:'dia', name:'اجتماع الشماسية الأسبوعي', activity:'اجتماع أسبوعي', place:'', note:'كل خميس من 6 لـ 9 مساءً', notifyDate:'', virtual:true});
+  return out.concat(all);
 }
 
 /* قواعد الحجز. نفس القواعد بتتراجع تاني في قاعدة البيانات وقت الحفظ. */
 function evaluate(date, service, excludeId){
   if (!date || !service) return null;
   if (date < todayIso()) return {kind:'past'};
-  const list = (byDate[date] || []).filter(b=>b.id!==excludeId);
-  const dia = list.find(b=>b.service==='dia');
+  const all = (byDate[date] || []).filter(b=>b.id!==excludeId);
+  const conf = all.filter(b=>b.status!=='pending');
+  const dia = conf.find(b=>b.service==='dia');
   if (dia) return {kind:'locked', who:dia};
-  if (isThu(date) && !list.length && service!=='dia' && !isException(date)) return {kind:'weekly'};
-  if (service==='dia' && list.length) return {kind:'needsFree', list};
-  const dup = list.find(b=>b.service===service);
+  if (service==='dia' && conf.length) return {kind:'needsFree', list:conf};
+  const dup = all.find(b=>b.service===service);
   if (dup) return {kind:'dup', who:dup};
-  return {kind:'ok', others:list};
+  const approval = isThu(date) && !conf.length && service!=='dia' && !isException(date) && !isApprover;
+  return {kind:'ok', others:all, approval};
 }
 const who = b => `<b>${esc(b.name)}</b>`;
 const sname = id => esc(SV[id]?.name||'');
@@ -273,12 +284,13 @@ function renderCheck(){
   if (!r) { html = ''; }
   else if (r.kind==='past') { blocked = true; html = `<div class="msg block">التاريخ ده عدى. اختار النهارده أو يوم جاي.</div>`; }
   else if (r.kind==='locked') { blocked = true; html = `<div class="msg block">اليوم ده محجوز لخدمة الشماسية (${who(r.who)}) ومينفعش أي خدمة تانية تحجز فيه.</div>`; }
-  else if (r.kind==='weekly') { blocked = true; html = `<div class="msg block">يوم الخميس محجوز لاجتماع الشماسية الأسبوعي من ٦ لـ٩.</div>`; }
   else if (r.kind==='needsFree') { blocked = true; html = `<div class="msg block">الشماسية محتاجة يوم فاضي بالكامل، واليوم ده فيه حجوزات: ${r.list.map(b=>`${sname(b.service)} (${who(b)})`).join('، ')}.</div>`; }
-  else if (r.kind==='dup') { blocked = true; html = `<div class="msg block">${sname(r.who.service)} حاجزة اليوم ده بالفعل. الحاجز: ${who(r.who)}.</div>`; }
+  else if (r.kind==='dup') { blocked = true; html = `<div class="msg block">${sname(r.who.service)} حاجزة اليوم ده ${r.who.status==='pending'?'(طلبها بانتظار الموافقة)':'بالفعل'}. الحاجز: ${who(r.who)}.</div>`; }
+  else if (r.approval) { html = `<div class="msg warn">يوم الخميس محجوز لاجتماع الشماسية الأسبوعي من 6 لـ 9. طلبك هيتبعت لأمين الشمامسة، وهو اللي يقبل أو يرفض. هتشوف الرد في "طلباتي".</div>`; }
   else if (r.others.length) { html = `<div class="msg warn">فيه خدمات تانية حاجزة اليوم ده، ومفيش تعارض معاها: ${r.others.map(b=>`${sname(b.service)} (${who(b)})`).join('، ')}.</div>`; }
   else { html = `<div class="msg good">اليوم فاضي، تقدر تحجز.</div>`; }
   $('check').innerHTML = html;
+  $('submit').textContent = (r && r.approval) ? 'ابعت الطلب لأمين الشمامسة' : (editing ? 'احفظ التعديل' : 'احجز الميعاد');
   $('submit').disabled = blocked || !loaded || saving;
 }
 
@@ -298,7 +310,7 @@ function renderCal(){
     const label = `${longDate(k)}${list.length?`، ${nf.format(list.length)} حجز`:''}${locked?'، يوم الشماسية':''}`;
     html += `<button type="button" class="${cls}" data-d="${k}" aria-label="${label}">
       <span class="num">${nf.format(d.getDate())}</span>
-      <span class="chips">${shown.map(b=>`<span class="chip" style="--h:${SV[b.service]?.h??0}">${sname(b.service)}</span>`).join('')}${list.length>3?`<span class="more">+${nf.format(list.length-3)}</span>`:''}</span>
+      <span class="chips">${shown.map(b=>`<span class="chip${b.status==='pending'?' pend':''}" style="--h:${SV[b.service]?.h??0}">${sname(b.service)}</span>`).join('')}${list.length>3?`<span class="more">+${nf.format(list.length-3)}</span>`:''}</span>
     </button>`;
   }
   $('grid').innerHTML = html;
@@ -315,6 +327,7 @@ function renderDay(){
     return `<li><div><span class="tag" style="--h:${SV[b.service]?.h??0}">${sname(b.service)||'خدمة'}</span>
       ${b.activity||b.place?`<div class="note"><b>${esc(b.activity)}</b>${b.activity&&b.place?' · ':''}${esc(b.place)}</div>`:''}
       <div class="who">الحاجز: ${esc(b.name)}</div>
+      ${b.status==='pending'?'<div class="pendtag">بانتظار موافقة أمين الشمامسة</div>':''}
       ${b.note?`<div class="note">${esc(b.note)}</div>`:''}
       ${b.notifyDate?`<div class="who">تاريخ الإخطار: ${shortDate(b.notifyDate)}</div>`:''}</div>
       <div class="acts">${edit}${cancel}</div></li>`;
@@ -324,13 +337,15 @@ function renderDay(){
 function renderForm(){
   const e = !!editing;
   $('formTitle').textContent = e ? 'تعديل حجز' : 'حجز جديد';
-  $('submit').textContent = e ? 'احفظ التعديل' : 'احجز الميعاد';
   $('editbar').hidden = !e;
   if (e) $('editText').textContent = `بتعدّل حجز ${SV[editing.service]?.name||''} يوم ${shortDate(editing.date)}`;
   $('codeRow').hidden = !(e && !isAdmin);
   $('notifyHint').textContent = e ? 'لما تحفظ التعديل، تاريخ الإخطار بيتحدّث لتاريخ النهارده.' : 'تاريخ الإخطار بيتسجل تلقائي بتاريخ يوم الحجز.';
-  $('adminbar').hidden = !isAdmin;
-  $('adminOpen').hidden = isAdmin;
+  $('adminbar').hidden = !isApprover;
+  $('adminOpen').hidden = isApprover;
+  $('adminTxt').textContent = isAdmin ? 'وضع المشرف: تقدر تعدّل أي حجز وتلغيه.' : 'أمين الشمامسة: توافق على طلبات الخميس.';
+  $('adminLink').hidden = !isAdmin;
+  $('apprLink').textContent = 'طلبات الخميس' + (pendingCount ? ` (${pendingCount})` : '');
 }
 
 function renderAll(){ renderCal(); renderDay(); renderForm(); renderCheck(); }
@@ -357,9 +372,9 @@ function startEdit(id){
   renderAll(); $('formPanel').scrollIntoView({behavior:'smooth', block:'start'});
 }
 
-function showCode(code){
+function showCode(code, pending){
   const box = $('codebox'); box.hidden = false;
-  box.innerHTML = `<b>اتسجّل الحجز. ده كود التعديل بتاعك:</b>
+  box.innerHTML = `<b>${pending ? 'اتبعت الطلب لأمين الشمامسة وبانتظار موافقته. ده كود التعديل بتاعك:' : 'اتسجّل الحجز. ده كود التعديل بتاعك:'}</b>
     <b class="code" dir="ltr">${esc(code)}</b>
     <span class="status">احتفظ بالكود (صوّر الشاشة أو انسخه). هتحتاجه لو عايز تغيّر ميعاد الحجز، ومحدش غيرك يقدر يعدّله. الكود متخزّن كمان على الجهاز ده.</span>
     <div><button class="btn" type="button" id="copyCode">انسخ الكود</button> <button class="lnk" type="button" id="hideCode">تمام</button></div>`;
@@ -376,7 +391,27 @@ async function reloadBookings(){
     const {data} = await sb.from('weekly_exceptions').select('from_date,to_date');
     if (data) exceptions = data.map(x=>({from:x.from_date, to:x.to_date}));
   } catch(e){}
+  if (isApprover) { try { pendingCount = (await rpc('pending_requests')).length; } catch(e){} }
+  loadMyReqs();
 }
+
+let dismissed = [];
+try { dismissed = JSON.parse(localStorage.getItem('church-cal-dismissed') || '[]') || []; } catch(e){}
+async function loadMyReqs(){
+  const ids = Object.keys(codes).filter(k=>/^[0-9a-f-]{36}$/.test(k)).slice(-50);
+  if (!sb || !ids.length) return;
+  try {
+    const list = (await rpc('my_requests', {p_ids: ids})).filter(x=>(x.status==='pending' || x.status==='rejected') && !dismissed.includes(x.id));
+    $('myReq').hidden = !list.length;
+    $('myReqBody').innerHTML = list.map(x=>`<div class="req"><div><span class="tag" style="--h:${SV[x.service]?.h??0}">${sname(x.service)}</span> · ${shortDate(x.date)}</div>
+      ${x.status==='pending' ? '<div class="pendtag">بانتظار موافقة أمين الشمامسة</div>' : `<div class="msg block">اترفض${x.note?': '+esc(x.note):''}</div><button class="lnk" type="button" data-dismiss="${x.id}">تمام</button>`}</div>`).join('');
+  } catch(e){}
+}
+$('myReqBody').addEventListener('click', e=>{
+  const b = e.target.closest('[data-dismiss]'); if (!b) return;
+  dismissed.push(b.dataset.dismiss); try { localStorage.setItem('church-cal-dismissed', JSON.stringify(dismissed)); } catch(_){}
+  loadMyReqs();
+});
 
 $('grid').addEventListener('click', e=>{ const b=e.target.closest('[data-d]'); if(b) select(b.dataset.d, true); });
 $('prev').onclick = ()=>{ view = new Date(view.getFullYear(), view.getMonth()-1, 1); renderCal(); };
@@ -421,7 +456,7 @@ $('form').addEventListener('submit', async e=>{
     } else {
       const r = await rpc('add_booking', args);
       await reloadBookings();
-      if (r.ok){ codes[r.id] = r.code; saveCodes(); resetForm(); showCode(r.code); say(''); }
+      if (r.ok){ codes[r.id] = r.code; saveCodes(); resetForm(); showCode(r.code, r.status==='pending'); say(''); loadMyReqs(); }
       else say(r.error);
     }
   } catch(err){ say('حصلت مشكلة وقت الحفظ. اتأكد من النت وجرّب تاني.'); }
@@ -437,12 +472,13 @@ $('adminForm').addEventListener('submit', async e=>{
   try {
     const {error} = await sb.auth.signInWithPassword({email:$('adminEmail').value.trim(), password:$('adminPass').value});
     if (error) { $('adminMsg').textContent = 'الإيميل أو كلمة السر غلط.'; return; }
-    if (await rpc('is_admin')){ isAdmin = true; $('adminForm').hidden = true; $('adminPass').value=''; }
-    else { await sb.auth.signOut(); $('adminMsg').textContent = 'الحساب ده مش مشرف.'; }
+    const role = await rpc('my_role');
+    if (role!=='none'){ applyRole(role); $('adminForm').hidden = true; $('adminPass').value=''; await reloadBookings(); }
+    else { await sb.auth.signOut(); $('adminMsg').textContent = 'الحساب ده مش مشرف ولا أمين شمامسة.'; }
   } catch(err){ $('adminMsg').textContent = 'مقدرناش نتأكد. جرّب تاني.'; }
   renderAll();
 });
-$('adminOut').onclick = async ()=>{ isAdmin = false; pendingCancel = null; if (editing) resetForm(); try { await sb.auth.signOut(); } catch(e){} renderAll(); };
+$('adminOut').onclick = async ()=>{ isAdmin = false; isApprover = false; pendingCount = 0; pendingCancel = null; if (editing) resetForm(); try { await sb.auth.signOut(); } catch(e){} renderAll(); };
 
 async function start(){
   if (!sb){ $('loading').textContent = 'الموقع لسه محتاج إعداد: املا SUPABASE_URL و SUPABASE_ANON_KEY في ملف config.js.'; return; }
@@ -457,7 +493,7 @@ async function start(){
     await reloadBookings();
     TODAY = cairoToday(); sel = TODAY; view = parse(TODAY); view.setDate(1); $('fDate').value = sel;
     loaded = true; $('loading').hidden = true;
-    try { const {data:{session}} = await sb.auth.getSession(); if (session && await rpc('is_admin')) isAdmin = true; } catch(_){}
+    try { const {data:{session}} = await sb.auth.getSession(); if (session) { applyRole(await rpc('my_role')); if (isApprover) await reloadBookings(); } } catch(_){}
     renderAll();
   } catch(err){ $('loading').textContent = 'مقدرناش نحمّل الحجوزات. جرّب تعمل تحديث للصفحة.'; }
 }

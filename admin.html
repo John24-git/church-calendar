@@ -138,6 +138,11 @@ footer input{width:11rem}
 .pill button{border:none;background:none;color:var(--lock);font-size:1.1rem;line-height:1;padding:0 6px}
 .toast{position:sticky;bottom:12px;justify-self:center;background:var(--brand);color:var(--brand-fg);padding:.6rem 1rem;border-radius:6px;font-size:.9rem;border:1px solid var(--gold)}
 .login{display:grid;gap:10px;max-width:22rem}
+.swatches{display:flex;flex-wrap:wrap;gap:6px;flex-basis:100%}
+.sw{width:1.8rem;height:1.8rem;border-radius:50%;border:2px solid var(--surface);background:hsl(var(--h) 60% 52%);padding:0}
+.sw.on{outline:2px solid var(--fg);outline-offset:2px}
+button.dot{border:none;padding:0;cursor:pointer;width:1.6rem;height:1.6rem;border-radius:50%}
+.sw-field{flex:1 1 100%;display:grid;gap:4px}
 .signup{margin-top:6px}
 .signup summary{cursor:pointer;color:var(--accent);margin-bottom:10px}
 .badge{font-size:.75rem;padding:0 8px;border-radius:99px;background:var(--surface);border:1px solid var(--line)}
@@ -157,7 +162,7 @@ footer input{width:11rem}
     <svg class="cross" aria-hidden="true"><use href="#cc"/></svg>
     <h1>إدارة الكاليندر</h1>
     <div class="loc">كنيسة السيدة العذراء والقديس أثناسيوس - دار السلام</div>
-    <a class="back" href="index.html">رجوع للكاليندر</a>
+    <a class="back" href="index.html">رجوع للكاليندر</a> <a class="back" href="approvals.html">طلبات الخميس</a>
   </div>
 </header>
 <div class="strip" aria-hidden="true"></div>
@@ -177,7 +182,7 @@ footer input{width:11rem}
       <summary>معنديش حساب. اعمل حساب جديد</summary>
       <form class="login" id="signupForm">
         <label>الإيميل<input id="suEmail" type="email" autocomplete="email" dir="ltr" required></label>
-        <label>كلمة السر (٦ حروف على الأقل)<input id="suPass" type="password" minlength="6" autocomplete="new-password" dir="ltr" required></label>
+        <label>كلمة السر (6 حروف على الأقل)<input id="suPass" type="password" minlength="6" autocomplete="new-password" dir="ltr" required></label>
         <button class="btn" type="submit">اعمل الحساب</button>
         <span class="status" id="suMsg"></span>
       </form>
@@ -188,12 +193,12 @@ footer input{width:11rem}
   <div id="adminArea" hidden style="display:grid;gap:20px">
     <section class="panel sect">
       <h2>الخدمات</h2>
-      <p>غيّر الاسم أو اللون (رقم من 0 لـ360) أو الترتيب، واضغط حفظ. خدمة الشماسية ثابتة لأن قواعد الحجز مربوطة بيها.</p>
+      <p>غيّر الاسم أو اللون (اضغط على الدايرة الملونة) أو الترتيب، واضغط حفظ. خدمة الشماسية ثابتة لأن قواعد الحجز مربوطة بيها.</p>
       <div id="svcList" style="display:grid;gap:8px"></div>
       <form class="addrow" id="svcAdd">
         <label>الاسم<input id="nsName" required maxlength="40" placeholder="مثلاً: خدمة الشباب"></label>
         <label class="sm">المعرّف<input id="nsId" required maxlength="20" dir="ltr" placeholder="youth"></label>
-        <label class="sm">اللون<input id="nsHue" type="number" min="0" max="360" value="200"></label>
+                <div class="sw-field"><span class="status">اللون</span><div class="swatches" id="nsSw"></div></div>
         <button class="btn primary" type="submit">أضف خدمة</button>
       </form>
       <p>المعرّف كلمة إنجليزي صغيرة من غير مسافات، ومينفعش يتغيّر بعد كده.</p>
@@ -211,7 +216,7 @@ footer input{width:11rem}
 
     <section class="panel sect">
       <h2>استثناءات خميس الشماسية</h2>
-      <p>كل خميس محجوز لاجتماع الشماسية من ٦ لـ٩. في الفترات اللي هنا الخميس بيتفتح للحجز العادي (مؤتمرات الصيف، الخلوات…).</p>
+      <p>كل خميس محجوز لاجتماع الشماسية من 6 لـ 9، والحجز فيه بيحتاج موافقة أمين الشمامسة. في الفترات اللي هنا الحجز بيتأكد على طول من غير موافقة (مؤتمرات الصيف، الخلوات…).</p>
       <div id="exList" style="display:grid;gap:8px"></div>
       <form class="addrow" id="exAdd">
         <label class="sm">من<input id="neFrom" type="date" required></label>
@@ -223,7 +228,7 @@ footer input{width:11rem}
 
     <section class="panel sect">
       <h2>المستخدمين</h2>
-      <p>اللي عمل حساب بيظهر هنا. اضغط "اعمله مشرف" عشان يقدر يعدّل الخدمات والحجوزات.</p>
+      <p>اللي عمل حساب بيظهر هنا. "مشرف" بيعدّل كل حاجة. "أمين الشمامسة" بيحجز ويوافق على طلبات الخميس بس، ومبيدخلش صفحة الإدارة.</p>
       <div id="userList" style="display:grid;gap:8px"></div>
     </section>
   </div>
@@ -235,7 +240,7 @@ footer input{width:11rem}
 const $ = id => document.getElementById(id);
 const esc = s => String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const MONTHS = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
-const nf = new Intl.NumberFormat('ar-EG',{useGrouping:false});
+const nf = new Intl.NumberFormat('en-US',{useGrouping:false});
 const fmt = s => { const [y,m,d]=s.split('-').map(Number); return `${nf.format(d)} ${MONTHS[m-1]} ${nf.format(y)}`; };
 const CFG = window.APP_CONFIG || {};
 const sb = (window.supabase && CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY)
@@ -268,11 +273,23 @@ async function loadAll(){
 async function loadUsers(){
   const {data, error} = await sb.rpc('list_users');
   if (error) { $('userList').innerHTML = '<span class="status">شغّل update-2.sql الأول.</span>'; return; }
-  $('userList').innerHTML = (data||[]).map(u=>`<div class="row"><span class="grow" dir="ltr" style="text-align:right">${esc(u.email)}</span>
-    <span class="badge ${u.is_admin?'on':''}">${u.is_admin?'مشرف':'في الانتظار'}</span>
-    ${u.id===myId ? '<span class="meta">إنت</span>' : `<button class="btn sm ${u.is_admin?'danger':''}" data-uid="${esc(u.id)}" data-make="${u.is_admin?'0':'1'}" type="button">${u.is_admin?'شيل الإشراف':'اعمله مشرف'}</button>`}</div>`).join('') || '<span class="status">مفيش مستخدمين.</span>';
+  $('userList').innerHTML = (data||[]).map(u=>{
+    const me = u.id===myId;
+    const badge = u.is_admin ? '<span class="badge on">مشرف</span>' : u.is_approver ? '<span class="badge on">أمين الشمامسة</span>' : '<span class="badge">في الانتظار</span>';
+    const btns = me ? '<span class="meta">إنت</span>' : `
+      <button class="btn sm ${u.is_admin?'danger':''}" data-uid="${esc(u.id)}" data-make="${u.is_admin?'0':'1'}" type="button">${u.is_admin?'شيل الإشراف':'اعمله مشرف'}</button>
+      ${u.is_admin ? '' : `<button class="btn sm ${u.is_approver?'danger':''}" data-appr="${esc(u.id)}" data-make="${u.is_approver?'0':'1'}" type="button">${u.is_approver?'شيل أمين الشمامسة':'اعمله أمين الشمامسة'}</button>`}`;
+    return `<div class="row"><span class="grow" dir="ltr" style="text-align:right">${esc(u.email)}</span>${badge}${btns}</div>`;
+  }).join('') || '<span class="status">مفيش مستخدمين.</span>';
 }
 $('userList').addEventListener('click', async e=>{
+  const ap = e.target.closest('[data-appr]');
+  if (ap){
+    const {data, error} = await sb.rpc('set_approver', {p_user:ap.dataset.appr, p_make:ap.dataset.make==='1'});
+    if (error) return fail(error);
+    if (!data.ok) return say(data.error);
+    say(ap.dataset.make==='1' ? 'اتحوّل لأمين شمامسة.' : 'اتشالت صلاحية أمين الشمامسة.'); loadUsers(); return;
+  }
   const b = e.target.closest('[data-uid]'); if (!b) return;
   const {data, error} = await sb.rpc('set_admin', {p_user:b.dataset.uid, p_make:b.dataset.make==='1'});
   if (error) return fail(error);
@@ -288,17 +305,21 @@ $('signupForm').addEventListener('submit', async e=>{
   $('signupForm').reset();
 });
 
+const HUES = [350,15,30,45,60,90,130,160,185,205,230,255,275,300,325];
+const swatchHtml = cur => HUES.map(h=>`<button type="button" class="sw${Math.abs(h-cur)<8?' on':''}" data-h="${h}" style="--h:${h}" aria-label="لون"></button>`).join('');
+let newHue = 205;
 function renderServices(list){
   window._maxSort = Math.max(0, ...list.map(s=>s.sort||0));
   $('svcList').innerHTML = list.map(s=>{
     if (s.id==='dia') return `<div class="row" style="--h:${s.hue}"><i class="dot"></i><span class="grow"><b>${esc(s.name)}</b></span><span class="meta">ثابتة</span></div>`;
-    return `<div class="row" data-id="${esc(s.id)}" style="--h:${s.hue}"><i class="dot"></i>
+    return `<div class="row" data-id="${esc(s.id)}" data-hue="${s.hue}" style="--h:${s.hue}"><button type="button" class="dot" data-pick aria-label="غيّر اللون"></button>
       <input class="grow" data-f="name" value="${esc(s.name)}" maxlength="40" aria-label="اسم الخدمة">
-      <input class="num" data-f="hue" type="number" min="0" max="360" value="${s.hue}" aria-label="اللون">
       <input class="num" data-f="sort" type="number" value="${s.sort}" aria-label="الترتيب">
       <button class="btn sm" data-save="${esc(s.id)}" type="button">حفظ</button>
-      <button class="btn sm danger" data-del="${esc(s.id)}" type="button">${pendingDel==='s:'+s.id?'تأكيد الحذف':'حذف'}</button></div>`;
+      <button class="btn sm danger" data-del="${esc(s.id)}" type="button">${pendingDel==='s:'+s.id?'تأكيد الحذف':'حذف'}</button>
+      <div class="swatches" hidden>${swatchHtml(s.hue)}</div></div>`;
   }).join('');
+  $('nsSw').innerHTML = swatchHtml(newHue);
 }
 function renderActs(list){
   $('actList').innerHTML = list.map(a=>`<span class="pill">${esc(a.name)}<button type="button" data-adel="${esc(a.name)}" aria-label="حذف ${esc(a.name)}">×</button></span>`).join('') || '<span class="status">مفيش أنشطة.</span>';
@@ -311,17 +332,18 @@ function renderEx(list){
 
 function askDelete(key, redo){ if (pendingDel!==key){ pendingDel=key; redo(); setTimeout(()=>{ if(pendingDel===key){ pendingDel=null; redo(); } },4000); return false; } pendingDel=null; return true; }
 
-$('svcList').addEventListener('input', e=>{
-  const row = e.target.closest('.row'); if (row && e.target.dataset.f==='hue') row.style.setProperty('--h', e.target.value||0);
-});
 $('svcList').addEventListener('click', async e=>{
+  const row = e.target.closest('.row');
+  if (e.target.closest('[data-pick]')) { const sw = row.querySelector('.swatches'); sw.hidden = !sw.hidden; return; }
+  const swb = e.target.closest('.sw');
+  if (swb && row){ row.dataset.hue = swb.dataset.h; row.style.setProperty('--h', swb.dataset.h); row.querySelectorAll('.sw').forEach(b=>b.classList.toggle('on', b===swb)); return; }
   const sv = e.target.closest('[data-save]'), dl = e.target.closest('[data-del]');
   try {
     if (sv){
-      const row = sv.closest('.row'), id = sv.dataset.save;
+      const id = sv.dataset.save;
       const name = row.querySelector('[data-f=name]').value.trim();
       if (!name) { say('اكتب اسم الخدمة.'); return; }
-      const {error} = await sb.from('services').update({name, hue:+row.querySelector('[data-f=hue]').value||0, sort:+row.querySelector('[data-f=sort]').value||0}).eq('id', id);
+      const {error} = await sb.from('services').update({name, hue:+row.dataset.hue||0, sort:+row.querySelector('[data-f=sort]').value||0}).eq('id', id);
       if (error) throw error; say('اتحفظت الخدمة.');
     } else if (dl){
       const id = dl.dataset.del;
@@ -331,13 +353,17 @@ $('svcList').addEventListener('click', async e=>{
     }
   } catch(err){ fail(err); }
 });
+$('nsSw').addEventListener('click', e=>{
+  const b = e.target.closest('.sw'); if (!b) return;
+  newHue = +b.dataset.h; $('nsSw').querySelectorAll('.sw').forEach(x=>x.classList.toggle('on', x===b));
+});
 $('svcAdd').addEventListener('submit', async e=>{
   e.preventDefault();
   const id = $('nsId').value.trim().toLowerCase();
   if (!/^[a-z][a-z0-9_]{1,19}$/.test(id)) { say('المعرّف لازم حروف إنجليزي صغيرة وأرقام بس، ويبدأ بحرف.'); return; }
-  const {error} = await sb.from('services').insert({id, name:$('nsName').value.trim(), hue:+$('nsHue').value||0, sort:(window._maxSort||0)+1});
+  const {error} = await sb.from('services').insert({id, name:$('nsName').value.trim(), hue:newHue, sort:(window._maxSort||0)+1});
   if (error) return fail(error);
-  $('svcAdd').reset(); $('nsHue').value = 200; say('اتضافت الخدمة.'); loadAll().catch(fail);
+  $('svcAdd').reset(); say('اتضافت الخدمة.'); loadAll().catch(fail);
 });
 
 $('actList').addEventListener('click', async e=>{
