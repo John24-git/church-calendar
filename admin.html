@@ -3,6 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" media="(prefers-color-scheme: light)" content="#6e1220">
+<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#4a0f1a">
 <title>إدارة كاليندر الكنيسة</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap">
 <style>
@@ -17,13 +20,13 @@
   --font-body:"IBM Plex Sans Arabic","Segoe UI",Tahoma,sans-serif;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  --bg:#190f13; --surface:#25151b; --surface2:#2f1b23; --fg:#f2e7d2; --muted:#b5a38c; --line:#4a2c36;
+  --bg:#170d11; --surface:#2a1820; --surface2:#36212b; --fg:#f6ecd9; --muted:#c9b8a0; --line:#5d3a47;
   --brand:#4a0f1a; --brand-fg:#f3dfae; --gold:#d6b25e; --gold-deep:#d6b25e;
   --accent:#e0bb64; --btn-bg:#9a2236; --btn-fg:#fbf0d6;
   --lock:#ff9aa7; --lock-bg:#3d1a25; --ok:#7bd6a4; --warn-bg:#3b2f10; --warn-fg:#f3d58a;
   --cs:40%; --cl:24%; --ct:86%; color-scheme:dark}}
 :root[data-theme="dark"]{
-  --bg:#190f13; --surface:#25151b; --surface2:#2f1b23; --fg:#f2e7d2; --muted:#b5a38c; --line:#4a2c36;
+  --bg:#170d11; --surface:#2a1820; --surface2:#36212b; --fg:#f6ecd9; --muted:#c9b8a0; --line:#5d3a47;
   --brand:#4a0f1a; --brand-fg:#f3dfae; --gold:#d6b25e; --gold-deep:#d6b25e;
   --accent:#e0bb64; --btn-bg:#9a2236; --btn-fg:#fbf0d6;
   --lock:#ff9aa7; --lock-bg:#3d1a25; --ok:#7bd6a4; --warn-bg:#3b2f10; --warn-fg:#f3d58a;
@@ -67,7 +70,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 .dow{font-family:var(--font-display);font-size:.95rem;color:var(--accent);text-align:center;padding-block:4px;font-weight:700}
 .day{position:relative;min-height:5.8rem;border:1px solid var(--line);border-radius:5px;background:var(--surface);padding:4px;text-align:start;display:flex;flex-direction:column;gap:3px;min-width:0;overflow:hidden}
 .day.out{opacity:.38}
-.day.past{background:var(--surface2)}
+.day.past{background:var(--bg)}
 .day.today .num{background:var(--brand);color:var(--brand-fg)}
 .day.sel{outline:2px solid var(--gold);outline-offset:1px}
 .day.locked{background:repeating-linear-gradient(135deg,var(--lock-bg) 0 8px,var(--surface) 8px 16px);border-color:var(--lock)}
@@ -227,6 +230,18 @@ button.dot{border:none;padding:0;cursor:pointer;width:1.6rem;height:1.6rem;borde
     </section>
 
     <section class="panel sect">
+      <h2>موسم خدمة الشماسية</h2>
+      <p>حدّد بداية العام ونهايته. اجتماع الشماسية الأسبوعي (الخميس 6 لـ 9) بيتحسب جوه الموسم بس. الخميسات اللي برة الموسم متاحة للحجز من غير موافقة. لو مفيش موسم متسجل، كل الخميسات بتتحسب.</p>
+      <div id="seasonList" style="display:grid;gap:8px"></div>
+      <form class="addrow" id="seasonAdd">
+        <label class="sm">بداية العام<input id="nsFrom" type="date" required></label>
+        <label class="sm">نهاية العام<input id="nsTo" type="date" required></label>
+        <label>الاسم (اختياري)<input id="nsLabel" maxlength="40" placeholder="مثلاً: عام 2026/2027"></label>
+        <button class="btn primary" type="submit">أضف موسم</button>
+      </form>
+    </section>
+
+    <section class="panel sect">
       <h2>المستخدمين</h2>
       <p>اللي عمل حساب بيظهر هنا. "مشرف" بيعدّل كل حاجة. "أمين الشمامسة" بيحجز ويوافق على طلبات الخميس بس، ومبيدخلش صفحة الإدارة.</p>
       <div id="userList" style="display:grid;gap:8px"></div>
@@ -268,7 +283,32 @@ async function loadAll(){
   if (ac.error) { $('actList').innerHTML = '<span class="status">شغّل update-1.sql الأول.</span>'; } else renderActs(ac.data);
   if (ex.error) { $('exList').innerHTML = '<span class="status">شغّل update-1.sql الأول.</span>'; } else renderEx(ex.data);
   loadUsers();
+  loadSeasons();
 }
+
+async function loadSeasons(){
+  const {data, error} = await sb.from('diaconate_seasons').select('id,from_date,to_date,label').order('from_date');
+  if (error) { $('seasonList').innerHTML = '<span class="status">شغّل update-4.sql الأول.</span>'; return; }
+  $('seasonList').innerHTML = data.map(x=>`<div class="row"><span class="grow"><b>${fmt(x.from_date)} إلى ${fmt(x.to_date)}</b>${x.label?' · '+esc(x.label):''}</span>
+    <button class="btn sm danger" data-sdel="${esc(x.id)}" type="button">${pendingDel==='n:'+x.id?'تأكيد الحذف':'حذف'}</button></div>`).join('')
+    || '<span class="status">مفيش مواسم متسجلة، فكل الخميسات بتتحسب لاجتماع الشماسية.</span>';
+}
+$('seasonList').addEventListener('click', async e=>{
+  const b = e.target.closest('[data-sdel]'); if (!b) return;
+  const id = b.dataset.sdel;
+  if (!askDelete('n:'+id, loadSeasons)) return;
+  const {error} = await sb.from('diaconate_seasons').delete().eq('id', id);
+  if (error) return fail(error); say('اتحذف الموسم.'); loadSeasons();
+});
+$('nsFrom').addEventListener('change', ()=>{ if (!$('nsTo').value || $('nsTo').value < $('nsFrom').value) $('nsTo').value = $('nsFrom').value; });
+$('seasonAdd').addEventListener('submit', async e=>{
+  e.preventDefault();
+  const from_date = $('nsFrom').value, to_date = $('nsTo').value;
+  if (to_date < from_date) { say('نهاية العام لازم تكون بعد البداية.'); return; }
+  const {error} = await sb.from('diaconate_seasons').insert({from_date, to_date, label:$('nsLabel').value.trim()});
+  if (error) return fail(error);
+  $('seasonAdd').reset(); say('اتضاف الموسم.'); loadSeasons();
+});
 
 async function loadUsers(){
   const {data, error} = await sb.rpc('list_users');

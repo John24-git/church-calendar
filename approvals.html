@@ -3,6 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" media="(prefers-color-scheme: light)" content="#6e1220">
+<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#4a0f1a">
 <title>طلبات الخميس</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap">
 <style>
@@ -17,13 +20,13 @@
   --font-body:"IBM Plex Sans Arabic","Segoe UI",Tahoma,sans-serif;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  --bg:#190f13; --surface:#25151b; --surface2:#2f1b23; --fg:#f2e7d2; --muted:#b5a38c; --line:#4a2c36;
+  --bg:#170d11; --surface:#2a1820; --surface2:#36212b; --fg:#f6ecd9; --muted:#c9b8a0; --line:#5d3a47;
   --brand:#4a0f1a; --brand-fg:#f3dfae; --gold:#d6b25e; --gold-deep:#d6b25e;
   --accent:#e0bb64; --btn-bg:#9a2236; --btn-fg:#fbf0d6;
   --lock:#ff9aa7; --lock-bg:#3d1a25; --ok:#7bd6a4; --warn-bg:#3b2f10; --warn-fg:#f3d58a;
   --cs:40%; --cl:24%; --ct:86%; color-scheme:dark}}
 :root[data-theme="dark"]{
-  --bg:#190f13; --surface:#25151b; --surface2:#2f1b23; --fg:#f2e7d2; --muted:#b5a38c; --line:#4a2c36;
+  --bg:#170d11; --surface:#2a1820; --surface2:#36212b; --fg:#f6ecd9; --muted:#c9b8a0; --line:#5d3a47;
   --brand:#4a0f1a; --brand-fg:#f3dfae; --gold:#d6b25e; --gold-deep:#d6b25e;
   --accent:#e0bb64; --btn-bg:#9a2236; --btn-fg:#fbf0d6;
   --lock:#ff9aa7; --lock-bg:#3d1a25; --ok:#7bd6a4; --warn-bg:#3b2f10; --warn-fg:#f3d58a;
@@ -67,7 +70,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 .dow{font-family:var(--font-display);font-size:.95rem;color:var(--accent);text-align:center;padding-block:4px;font-weight:700}
 .day{position:relative;min-height:5.8rem;border:1px solid var(--line);border-radius:5px;background:var(--surface);padding:4px;text-align:start;display:flex;flex-direction:column;gap:3px;min-width:0;overflow:hidden}
 .day.out{opacity:.38}
-.day.past{background:var(--surface2)}
+.day.past{background:var(--bg)}
 .day.today .num{background:var(--brand);color:var(--brand-fg)}
 .day.sel{outline:2px solid var(--gold);outline-offset:1px}
 .day.locked{background:repeating-linear-gradient(135deg,var(--lock-bg) 0 8px,var(--surface) 8px 16px);border-color:var(--lock)}
