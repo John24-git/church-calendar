@@ -141,6 +141,12 @@ footer input{width:11rem}
 .pill button{border:none;background:none;color:var(--lock);font-size:1.1rem;line-height:1;padding:0 6px}
 .toast{position:sticky;bottom:12px;justify-self:center;background:var(--brand);color:var(--brand-fg);padding:.6rem 1rem;border-radius:6px;font-size:.9rem;border:1px solid var(--gold)}
 .login{display:grid;gap:10px;max-width:22rem}
+.roles{margin:0;padding-inline-start:1.2rem;color:var(--muted);font-size:.85rem;display:grid;gap:2px}
+.urow{display:grid;gap:8px;border:1px solid var(--line);border-radius:6px;padding:10px 12px;background:var(--surface2)}
+.urow .line{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.urow select,.urow input{width:auto;flex:1 1 9rem}
+.row label.ord{display:flex;align-items:center;gap:6px;flex:0 0 auto;font-size:.8rem;color:var(--muted)}
+.row label.ord input{width:4.5rem;flex:none}
 .swatches{display:flex;flex-wrap:wrap;gap:6px;flex-basis:100%}
 .sw{width:1.8rem;height:1.8rem;border-radius:50%;border:2px solid var(--surface);background:hsl(var(--h) 60% 52%);padding:0}
 .sw.on{outline:2px solid var(--fg);outline-offset:2px}
@@ -243,7 +249,13 @@ button.dot{border:none;padding:0;cursor:pointer;width:1.6rem;height:1.6rem;borde
 
     <section class="panel sect">
       <h2>المستخدمين</h2>
-      <p>اللي عمل حساب بيظهر هنا. "مشرف" بيعدّل كل حاجة. "أمين الشمامسة" بيحجز ويوافق على طلبات الخميس بس، ومبيدخلش صفحة الإدارة.</p>
+      <p>اللي عمل حساب بيظهر هنا بحالة "في الانتظار". اختار له الدور واكتب اسمه واضغط حفظ.</p>
+      <ul class="roles">
+        <li><b>أمين خدمة:</b> بيحجز لخدمة واحدة (اللي تحددها)، ويعدّل ويلغي حجزه هو.</li>
+        <li><b>الأمين العام:</b> بيحجز لأي خدمة (غير الشماسية)، وبيشوف كل حاجة ويعدّل ويلغي أي حجز، وبيجيله إشعار لما أمين خدمة يلغي.</li>
+        <li><b>أمين الشماسية:</b> بيحجز للشماسية بس، ويوافق على طلبات الخميس.</li>
+        <li><b>مشرف عام:</b> بيعمل كل حاجة، وهو الوحيد اللي يدخل صفحة الإدارة دي.</li>
+      </ul>
       <div id="userList" style="display:grid;gap:8px"></div>
     </section>
   </div>
@@ -268,7 +280,7 @@ function fail(err, fallback){
   if (err && err.code==='23503') say('مينفعش تتمسح: عليها حجوزات. لازم تلغي حجوزاتها الأول.');
   else if (err && err.code==='23505') say('الاسم أو المعرّف ده موجود بالفعل.');
   else if (err && (err.code==='42501' || /row-level security/i.test(m))) say('مفيش صلاحية. اتأكد إنك داخل كمشرف.');
-  else if (err && (err.code==='42P01' || /schema cache|does not exist/i.test(m))) say('لازم تشغّل ملف update-1.sql في Supabase الأول.');
+  else if (err && (err.code==='42P01' || /schema cache|does not exist/i.test(m))) say('لازم تشغّل ملف update.sql في Supabase الأول.');
   else say(fallback || 'حصلت مشكلة، جرّب تاني.');
 }
 
@@ -280,15 +292,15 @@ async function loadAll(){
   ]);
   if (sv.error) throw sv.error;
   renderServices(sv.data);
-  if (ac.error) { $('actList').innerHTML = '<span class="status">شغّل update-1.sql الأول.</span>'; } else renderActs(ac.data);
-  if (ex.error) { $('exList').innerHTML = '<span class="status">شغّل update-1.sql الأول.</span>'; } else renderEx(ex.data);
+  if (ac.error) { $('actList').innerHTML = '<span class="status">شغّل update.sql الأول.</span>'; } else renderActs(ac.data);
+  if (ex.error) { $('exList').innerHTML = '<span class="status">شغّل update.sql الأول.</span>'; } else renderEx(ex.data);
   loadUsers();
   loadSeasons();
 }
 
 async function loadSeasons(){
   const {data, error} = await sb.from('diaconate_seasons').select('id,from_date,to_date,label').order('from_date');
-  if (error) { $('seasonList').innerHTML = '<span class="status">شغّل update-4.sql الأول.</span>'; return; }
+  if (error) { $('seasonList').innerHTML = '<span class="status">شغّل update.sql الأول.</span>'; return; }
   $('seasonList').innerHTML = data.map(x=>`<div class="row"><span class="grow"><b>${fmt(x.from_date)} إلى ${fmt(x.to_date)}</b>${x.label?' · '+esc(x.label):''}</span>
     <button class="btn sm danger" data-sdel="${esc(x.id)}" type="button">${pendingDel==='n:'+x.id?'تأكيد الحذف':'حذف'}</button></div>`).join('')
     || '<span class="status">مفيش مواسم متسجلة، فكل الخميسات بتتحسب لاجتماع الشماسية.</span>';
@@ -310,31 +322,37 @@ $('seasonAdd').addEventListener('submit', async e=>{
   $('seasonAdd').reset(); say('اتضاف الموسم.'); loadSeasons();
 });
 
+const ROLES = [['none','في الانتظار (بدون صلاحية)'],['service','أمين خدمة'],['general','الأمين العام'],['diaconate','أمين الشماسية'],['super','مشرف عام']];
+const ROLE_NAME = Object.fromEntries(ROLES);
 async function loadUsers(){
-  const {data, error} = await sb.rpc('list_users');
-  if (error) { $('userList').innerHTML = '<span class="status">شغّل update-2.sql الأول.</span>'; return; }
+  const [{data, error}, {data:svs}] = await Promise.all([sb.rpc('list_users'), sb.from('services').select('id,name').order('sort')]);
+  if (error) { $('userList').innerHTML = '<span class="status">شغّل update.sql الأول.</span>'; return; }
+  const svOpts = sel => (svs||[]).filter(x=>x.id!=='dia').map(x=>`<option value="${esc(x.id)}" ${x.id===sel?'selected':''}>${esc(x.name)}</option>`).join('');
   $('userList').innerHTML = (data||[]).map(u=>{
-    const me = u.id===myId;
-    const badge = u.is_admin ? '<span class="badge on">مشرف</span>' : u.is_approver ? '<span class="badge on">أمين الشمامسة</span>' : '<span class="badge">في الانتظار</span>';
-    const btns = me ? '<span class="meta">إنت</span>' : `
-      <button class="btn sm ${u.is_admin?'danger':''}" data-uid="${esc(u.id)}" data-make="${u.is_admin?'0':'1'}" type="button">${u.is_admin?'شيل الإشراف':'اعمله مشرف'}</button>
-      ${u.is_admin ? '' : `<button class="btn sm ${u.is_approver?'danger':''}" data-appr="${esc(u.id)}" data-make="${u.is_approver?'0':'1'}" type="button">${u.is_approver?'شيل أمين الشمامسة':'اعمله أمين الشمامسة'}</button>`}`;
-    return `<div class="row"><span class="grow" dir="ltr" style="text-align:right">${esc(u.email)}</span>${badge}${btns}</div>`;
+    const mine = u.id===myId;
+    const badge = `<span class="badge ${u.role==='none'?'':'on'}">${esc(ROLE_NAME[u.role]||u.role)}</span>`;
+    if (mine) return `<div class="urow"><div class="line"><span class="grow" dir="ltr" style="text-align:right">${esc(u.email)}</span>${badge}<span class="meta">إنت</span></div></div>`;
+    return `<div class="urow" data-uid="${esc(u.id)}"><div class="line"><span class="grow" dir="ltr" style="text-align:right">${esc(u.email)}</span>${badge}</div>
+      <div class="line">
+        <select data-r aria-label="الدور">${ROLES.map(([v,l])=>`<option value="${v}" ${v===u.role?'selected':''}>${l}</option>`).join('')}</select>
+        <select data-s aria-label="الخدمة" ${u.role==='service'?'':'hidden'}><option value="">اختار الخدمة…</option>${svOpts(u.service)}</select>
+        <input data-n value="${esc(u.name)}" maxlength="60" placeholder="الاسم" aria-label="الاسم">
+        <button class="btn sm" data-saveu type="button">حفظ</button>
+      </div></div>`;
   }).join('') || '<span class="status">مفيش مستخدمين.</span>';
 }
+$('userList').addEventListener('change', e=>{
+  const r = e.target.closest('[data-r]'); if (!r) return;
+  r.closest('.urow').querySelector('[data-s]').hidden = r.value!=='service';
+});
 $('userList').addEventListener('click', async e=>{
-  const ap = e.target.closest('[data-appr]');
-  if (ap){
-    const {data, error} = await sb.rpc('set_approver', {p_user:ap.dataset.appr, p_make:ap.dataset.make==='1'});
-    if (error) return fail(error);
-    if (!data.ok) return say(data.error);
-    say(ap.dataset.make==='1' ? 'اتحوّل لأمين شمامسة.' : 'اتشالت صلاحية أمين الشمامسة.'); loadUsers(); return;
-  }
-  const b = e.target.closest('[data-uid]'); if (!b) return;
-  const {data, error} = await sb.rpc('set_admin', {p_user:b.dataset.uid, p_make:b.dataset.make==='1'});
+  const b = e.target.closest('[data-saveu]'); if (!b) return;
+  const row = b.closest('.urow');
+  const role = row.querySelector('[data-r]').value;
+  const {data, error} = await sb.rpc('set_staff', {p_user:row.dataset.uid, p_role:role, p_service:row.querySelector('[data-s]').value || null, p_name:row.querySelector('[data-n]').value});
   if (error) return fail(error);
   if (!data.ok) return say(data.error);
-  say(b.dataset.make==='1' ? 'اتحوّل لمشرف.' : 'اتشال الإشراف.'); loadUsers();
+  say('اتحفظت الصلاحية.'); loadUsers();
 });
 $('signupForm').addEventListener('submit', async e=>{
   e.preventDefault(); $('suMsg').textContent = '';
@@ -354,7 +372,7 @@ function renderServices(list){
     if (s.id==='dia') return `<div class="row" style="--h:${s.hue}"><i class="dot"></i><span class="grow"><b>${esc(s.name)}</b></span><span class="meta">ثابتة</span></div>`;
     return `<div class="row" data-id="${esc(s.id)}" data-hue="${s.hue}" style="--h:${s.hue}"><button type="button" class="dot" data-pick aria-label="غيّر اللون"></button>
       <input class="grow" data-f="name" value="${esc(s.name)}" maxlength="40" aria-label="اسم الخدمة">
-      <input class="num" data-f="sort" type="number" value="${s.sort}" aria-label="الترتيب">
+      <label class="ord">الترتيب<input class="num" data-f="sort" type="number" value="${s.sort}" aria-label="الترتيب"></label>
       <button class="btn sm" data-save="${esc(s.id)}" type="button">حفظ</button>
       <button class="btn sm danger" data-del="${esc(s.id)}" type="button">${pendingDel==='s:'+s.id?'تأكيد الحذف':'حذف'}</button>
       <div class="swatches" hidden>${swatchHtml(s.hue)}</div></div>`;

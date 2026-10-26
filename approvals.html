@@ -6,7 +6,7 @@
 <meta name="color-scheme" content="light dark">
 <meta name="theme-color" media="(prefers-color-scheme: light)" content="#6e1220">
 <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#4a0f1a">
-<title>طلبات الخميس</title>
+<title>صندوق الطلبات</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap">
 <style>
 /* Layout: right-to-left. A burgundy and gold banner with a Coptic cross, then the month grid beside a side panel (selected day + booking form). */
@@ -125,6 +125,9 @@ a.lnk{text-decoration:underline;font-size:.82rem}
 footer{display:flex;justify-content:center;gap:12px;align-items:center;flex-wrap:wrap;color:var(--muted);font-size:.85rem}
 footer form{display:flex;gap:6px;margin:0;align-items:center}
 footer input{width:11rem}
+.signup{margin-top:10px}
+.signup summary{cursor:pointer;color:var(--accent);font-size:.9rem}
+.userbar-links{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
 
 .admin-wrap{max-width:820px}
 .band-in .back{color:var(--gold);font-size:.9rem;text-decoration:underline}
@@ -138,6 +141,13 @@ footer input{width:11rem}
 .card input{flex:1 1 12rem}
 .btn.danger{color:var(--lock);border-color:var(--lock)}
 .toast{position:sticky;bottom:12px;justify-self:center;background:var(--brand);color:var(--brand-fg);padding:.6rem 1rem;border-radius:6px;font-size:.9rem;border:1px solid var(--gold)}
+.note-row{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--line);border-radius:6px;padding:8px 10px;background:var(--surface2)}
+.note-row.new{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold) inset}
+.note-row .when{color:var(--muted);font-size:.8rem}
+.opt{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--line);border-radius:6px;padding:10px 12px;background:var(--surface2)}
+.opt input{width:1.2rem;height:1.2rem;margin-top:.25rem;flex:none}
+.opt b{display:block}
+.opt span{color:var(--muted);font-size:.85rem}
 </style>
 </head>
 <body>
@@ -151,7 +161,7 @@ footer input{width:11rem}
 <header class="band">
   <div class="band-in">
     <svg class="cross" aria-hidden="true"><use href="#cc"/></svg>
-    <h1>طلبات يوم الخميس</h1>
+    <h1>صندوق الطلبات والإشعارات</h1>
     <div class="loc">كنيسة السيدة العذراء والقديس أثناسيوس - دار السلام</div>
     <a class="back" href="index.html">رجوع للكاليندر</a>
   </div>
@@ -159,8 +169,9 @@ footer input{width:11rem}
 <div class="strip" aria-hidden="true"></div>
 <div class="wrap admin-wrap">
   <p class="status" id="state">جاري التحميل…</p>
+
   <section class="panel sect" id="loginPanel" hidden>
-    <h2>دخول أمين الشمامسة</h2>
+    <h2>دخول</h2>
     <form class="login" id="loginForm">
       <label>الإيميل<input id="email" type="email" autocomplete="username" dir="ltr" required></label>
       <label>كلمة السر<input id="pass" type="password" autocomplete="current-password" dir="ltr" required></label>
@@ -168,12 +179,28 @@ footer input{width:11rem}
       <span class="status" id="loginMsg"></span>
     </form>
   </section>
-  <section class="panel sect" id="area" hidden>
-    <h2>طلبات بانتظار الموافقة <span class="status" id="count"></span></h2>
-    <p>كل خميس محجوز لاجتماع الشماسية. لما خدمة تطلب يوم خميس، توافق عليه فيتفتح اليوم للخدمة دي، أو ترفض وتكتب السبب لو حبيت.</p>
-    <div id="list" style="display:grid;gap:10px"></div>
-    <div style="display:flex;justify-content:space-between;align-items:center"><button class="btn sm" id="refresh" type="button">تحديث</button><button class="lnk" id="logout" type="button">خروج</button></div>
-  </section>
+
+  <div id="area" hidden style="display:grid;gap:20px">
+    <section class="panel sect">
+      <h2>طلبات بانتظار موافقتك <span class="status" id="count"></span></h2>
+      <p id="reqHelp"></p>
+      <div id="list" style="display:grid;gap:10px"></div>
+    </section>
+
+    <section class="panel sect" id="notesPanel" hidden>
+      <h2>الإشعارات <span class="status" id="unread"></span></h2>
+      <p>لما أمين خدمة يلغي حجز، بيوصلك هنا.</p>
+      <div id="notes" style="display:grid;gap:8px"></div>
+      <div><button class="btn sm" id="markRead" type="button">تحديد الكل كمقروء</button></div>
+    </section>
+
+    <section class="panel sect" id="setPanel" hidden>
+      <h2>إعدادات الأمين العام</h2>
+      <label class="opt"><input type="checkbox" id="setApprove"><div><b>كل حجز من أمناء الخدمات يحتاج موافقتي</b><span>لو مفعّلة، حجز أمين الخدمة بيفضل بانتظار موافقتك. لو مقفولة، بيتأكد على طول وإنت بتشوفه. (حجوزات الخميس بتروح لأمين الشماسية في الحالتين.)</span></div></label>
+      <label class="opt"><input type="checkbox" id="setCancel"><div><b>أمناء الخدمات يقدروا يلغوا حجوزاتهم</b><span>لو مفعّلة، الإلغاء بيتم على طول وبيجيلك إشعار. لو مقفولة، الإلغاء بيتم عن طريقك إنت بس.</span></div></label>
+    </section>
+    <div style="text-align:left"><button class="lnk" id="logout" type="button">خروج</button></div>
+  </div>
   <div class="toast" id="toast" hidden></div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -184,19 +211,18 @@ const esc = s => String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>
 const MONTHS = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
 const DOW = ['الأحد','الإثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
 const longDate = s => { const [y,m,d]=s.split('-').map(Number); return `${DOW[new Date(y,m-1,d).getDay()]} ${d} ${MONTHS[m-1]} ${y}`; };
+const stamp = t => new Date(t).toLocaleString('en-GB',{timeZone:'Africa/Cairo',dateStyle:'medium',timeStyle:'short'});
 const CFG = window.APP_CONFIG || {};
 const sb = (window.supabase && CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY) ? window.supabase.createClient(CFG.SUPABASE_URL, CFG.SUPABASE_ANON_KEY) : null;
-let SV = {}, toastTimer;
+let SV = {}, toastTimer, role = 'none';
 function say(t){ const el=$('toast'); el.textContent=t; el.hidden=false; clearTimeout(toastTimer); toastTimer=setTimeout(()=>{el.hidden=true;},5000); }
 function show(mode){ $('loginPanel').hidden = mode!=='login'; $('area').hidden = mode!=='area'; $('state').hidden = mode!=='msg'; }
 
-async function load(){
-  const {data:sv} = await sb.from('services').select('id,name,hue');
-  SV = Object.fromEntries((sv||[]).map(s=>[s.id,s]));
+async function loadReqs(){
   const {data, error} = await sb.rpc('pending_requests');
-  if (error) { $('list').innerHTML = '<span class="status">شغّل update-3.sql في Supabase الأول.</span>'; return; }
+  if (error) { $('list').innerHTML = '<span class="status">شغّل update.sql في Supabase الأول.</span>'; return; }
   $('count').textContent = data.length ? `(${data.length})` : '';
-  document.title = (data.length ? `(${data.length}) ` : '') + 'طلبات الخميس';
+  document.title = (data.length ? `(${data.length}) ` : '') + 'صندوق الطلبات';
   $('list').innerHTML = data.map(r=>{
     const s = SV[r.service] || {name:'خدمة', hue:0};
     return `<div class="card" data-id="${esc(r.id)}"><div class="top"><span class="when">${longDate(r.date)}</span>
@@ -208,6 +234,25 @@ async function load(){
         <button class="btn primary" data-ok type="button">قبول</button><button class="btn danger" data-no type="button">رفض</button></div></div>`;
   }).join('') || '<span class="status">مفيش طلبات مستنية.</span>';
 }
+async function loadNotes(){
+  if (role!=='general' && role!=='super') return;
+  const {data, error} = await sb.rpc('my_notifications');
+  if (error) return;
+  $('unread').textContent = data.unread ? `(${data.unread} جديد)` : '';
+  $('notes').innerHTML = data.items.map(n=>`<div class="note-row ${n.read?'':'new'}"><div><div>${esc(n.message)}</div><div class="when">${stamp(n.created_at)}</div></div></div>`).join('') || '<span class="status">مفيش إشعارات.</span>';
+}
+async function loadSettings(){
+  if (role!=='general' && role!=='super') return;
+  const {data} = await sb.rpc('get_settings');
+  $('setApprove').checked = !!(data && data.require_general_approval);
+  $('setCancel').checked = data && data.allow_service_cancel !== false;
+}
+async function loadAll(){
+  const {data:sv} = await sb.from('services').select('id,name,hue');
+  SV = Object.fromEntries((sv||[]).map(s=>[s.id,s]));
+  await Promise.all([loadReqs(), loadNotes(), loadSettings()]);
+}
+
 $('list').addEventListener('click', async e=>{
   const ok = e.target.closest('[data-ok]'), no = e.target.closest('[data-no]');
   if (!ok && !no) return;
@@ -215,27 +260,40 @@ $('list').addEventListener('click', async e=>{
   const {data, error} = await sb.rpc('decide_booking', {p_id:card.dataset.id, p_approve:!!ok, p_note:card.querySelector('[data-note]').value});
   if (error) { say('حصلت مشكلة، جرّب تاني.'); return; }
   say(data.ok ? (ok ? 'اتوافق على الطلب.' : 'اترفض الطلب.') : data.error);
-  load();
+  loadReqs();
 });
-$('refresh').onclick = load;
+$('markRead').onclick = async ()=>{ await sb.rpc('mark_notifications_read'); loadNotes(); };
+async function saveSetting(key, val){
+  const {data, error} = await sb.rpc('set_setting', {p_key:key, p_value:val});
+  say(error || !data.ok ? 'مقدرناش نحفظ الإعداد.' : 'اتحفظ الإعداد.');
+}
+$('setApprove').onchange = e=>saveSetting('require_general_approval', e.target.checked);
+$('setCancel').onchange = e=>saveSetting('allow_service_cancel', e.target.checked);
 $('logout').onclick = async ()=>{ await sb.auth.signOut(); show('login'); };
 
 async function enter(){
   const {data} = await sb.rpc('my_role');
-  if (data!=='admin' && data!=='approver'){ await sb.auth.signOut(); return false; }
-  show('area'); await load(); return true;
+  role = data ? data.role : 'none';
+  if (role==='none'){ await sb.auth.signOut(); return false; }
+  const isBoss = role==='general' || role==='super';
+  $('notesPanel').hidden = !isBoss; $('setPanel').hidden = !isBoss;
+  $('reqHelp').textContent = role==='diaconate'
+    ? 'طلبات الخدمات اللي عايزة يوم خميس (يوم اجتماع الشماسية). لما توافق، اليوم بيتفتح للخدمة دي.'
+    : role==='general' ? 'حجوزات أمناء الخدمات اللي بانتظار موافقتك (لو الإعداد تحت مفعّل).'
+    : role==='super' ? 'كل الطلبات المعلّقة.' : 'مفيش طلبات بتوصلك هنا، لأنك أمين خدمة. حالة طلباتك بتظهر في الكاليندر تحت "طلباتي".';
+  show('area'); await loadAll(); return true;
 }
 $('loginForm').addEventListener('submit', async e=>{
   e.preventDefault(); $('loginMsg').textContent='';
   const {error} = await sb.auth.signInWithPassword({email:$('email').value.trim(), password:$('pass').value});
   if (error) { $('loginMsg').textContent = 'الإيميل أو كلمة السر غلط.'; return; }
-  if (!(await enter())) $('loginMsg').textContent = 'الحساب ده مش أمين شمامسة.';
+  if (!(await enter())) $('loginMsg').textContent = 'الحساب ده لسه متفعّلش.';
 });
 (async()=>{
   if (!sb){ $('state').textContent = 'الموقع محتاج إعداد: املا config.js.'; return; }
   try {
     const {data:{session}} = await sb.auth.getSession();
-    if (session && await enter()) { setInterval(()=>{ if(!document.hidden) load(); }, 60000); return; }
+    if (session && await enter()) { setInterval(()=>{ if(!document.hidden) loadAll(); }, 60000); return; }
     show('login');
   } catch(err){ $('state').textContent = 'مقدرناش نتصل بقاعدة البيانات.'; show('msg'); }
 })();
