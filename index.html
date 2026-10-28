@@ -188,7 +188,7 @@ footer input{width:11rem}
       </div>
     </div>
     <div class="top-act">
-      <button class="btn gold" id="loginBtn" type="button" hidden>دخول الأمناء</button>
+      <button class="btn gold" id="loginBtn" type="button" hidden>تسجيل دخول</button>
       <div class="menu" id="userbar" hidden>
         <button class="usr" id="userBtn" type="button" aria-haspopup="true" aria-expanded="false">
           <span class="av" id="userAv"></span>
@@ -233,7 +233,7 @@ footer input{width:11rem}
         <h2 id="dayTitle"></h2>
         <div id="dayBody"></div>
         <button class="btn primary block" id="dayBook" type="button" hidden>احجز في اليوم ده</button>
-        <p class="status hint" id="loginHint" hidden>الكاليندر متاح للكل. للحجز ادخل بحساب أمين الخدمة.</p>
+        <p class="status hint" id="loginHint" hidden>الكاليندر متاح للكل. للحجز سجّل دخول بحساب أمين الخدمة.</p>
       </section>
       <section class="panel" id="myReq" hidden><h2>طلباتي</h2><div id="myReqBody"></div></section>
     </aside>
@@ -261,20 +261,20 @@ footer input{width:11rem}
 </dialog>
 
 <dialog id="loginDlg" class="dlg">
-  <div class="dlg-h"><h2>دخول الأمناء</h2><button class="x" type="button" data-close aria-label="إغلاق">×</button></div>
+  <div class="dlg-h"><h2>تسجيل دخول</h2><button class="x" type="button" data-close aria-label="إغلاق">×</button></div>
   <div class="dlg-b">
     <form id="loginForm">
       <label>الإيميل<input id="lEmail" type="email" autocomplete="username" dir="ltr" required></label>
       <label>كلمة السر<input id="lPass" type="password" autocomplete="current-password" dir="ltr" required></label>
-      <button class="btn primary" type="submit">دخول</button>
+      <button class="btn primary" type="submit">تسجيل دخول</button>
       <span class="status" id="loginMsg" role="status"></span>
     </form>
     <details class="signup">
-      <summary>معنديش حساب</summary>
+      <summary>إنشاء حساب</summary>
       <form id="signupForm">
         <label>الإيميل<input id="suEmail" type="email" autocomplete="email" dir="ltr" required></label>
         <label>كلمة السر (6 حروف على الأقل)<input id="suPass" type="password" minlength="6" autocomplete="new-password" dir="ltr" required></label>
-        <button class="btn" type="submit">اعمل الحساب</button>
+        <button class="btn" type="submit">إنشاء حساب</button>
         <span class="status" id="suMsg" role="status"></span>
       </form>
       <p class="status">بعد ما تعمل الحساب، المشرف هو اللي يفعّله ويحدد خدمتك.</p>
