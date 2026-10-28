@@ -693,6 +693,8 @@ $('suPass').addEventListener('input', ()=>{
 });
 $('signupForm').addEventListener('submit', async e=>{
   e.preventDefault(); $('suMsg').textContent = '';
+  if (!$('suName').value.trim() || !$('suPhone').value.trim() || !$('suService').value) { $('suMsg').textContent = 'كمّل كل الخانات: الاسم والتليفون والخدمة.'; return; }
+  if (!/^\+?[0-9]{7,15}$/.test($('suPhone').value.replace(/[\s\-()]/g,''))) { $('suMsg').textContent = 'رقم التليفون غير صحيح.'; return; }
   if (!pwOk($('suPass').value)) { $('suMsg').textContent = 'كلمة السر ضعيفة. كمّل الشروط اللي فوق لحد ما كلها تبقى ✓.'; return; }
   const {data, error} = await sb.auth.signUp({email:$('suEmail').value.trim(), password:$('suPass').value, options:{data:{name:$('suName').value.trim().slice(0,60), phone:$('suPhone').value.trim().slice(0,20), service:$('suService').value}}});
   if (error) { $('suMsg').textContent = /registered|exists/i.test(error.message) ? 'الإيميل ده عنده حساب بالفعل.' : 'مقدرناش نعمل الحساب: ' + error.message; return; }
