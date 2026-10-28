@@ -10,10 +10,10 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="كاليندر الكنيسة">
+<meta name="apple-mobile-web-app-title" content="أجندة الكنيسة">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#6e1220">
-<title>إدارة كاليندر الكنيسة</title>
+<title>إدارة أجندة الكنيسة</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap">
 <style>
 /* Layout: right-to-left. A burgundy and gold banner with a Coptic cross, then the month grid beside a side panel (selected day + booking form). */
@@ -180,9 +180,9 @@ button.dot{border:none;padding:0;cursor:pointer;width:1.6rem;height:1.6rem;borde
   <div class="top-in">
     <div class="brand">
       <svg class="cross" aria-hidden="true"><use href="#cc"/></svg>
-      <div class="brand-t"><h1>إدارة الكاليندر</h1><span>كنيسة السيدة العذراء والقديس أثناسيوس · دار السلام</span></div>
+      <div class="brand-t"><h1>إدارة الأجندة</h1><span>كنيسة السيدة العذراء والقديس أثناسيوس · دار السلام</span></div>
     </div>
-    <div class="top-act"><a class="btn" href="index.html">رجوع للكاليندر</a><a class="btn" href="approvals.html">طلبات الخميس</a></div>
+    <div class="top-act"><a class="btn" href="index.html">رجوع للأجندة</a><a class="btn" href="approvals.html">طلبات الخميس</a><button class="btn" id="logoutTop" type="button" hidden>تسجيل خروج</button></div>
   </div>
 </header>
 <div class="strip" aria-hidden="true"></div>
@@ -384,7 +384,7 @@ $('userList').addEventListener('click', async e=>{
   const d = e.target.closest('[data-delu]');
   if (d) {
     const row = d.closest('.urow'), mail = row.querySelector('.grow').textContent;
-    if (!confirm('تمسح حساب ' + mail + ' نهائيًا؟ مش هيقدر يدخل تاني، لكن حجوزاته القديمة هتفضل في الكاليندر.')) return;
+    if (!confirm('تمسح حساب ' + mail + ' نهائيًا؟ مش هيقدر يدخل تاني، لكن حجوزاته القديمة هتفضل في الأجندة.')) return;
     const {data, error} = await sb.rpc('delete_user', {p_user:row.dataset.uid});
     if (error) return fail(error);
     if (!data.ok) return say(data.error);
@@ -498,6 +498,7 @@ $('exAdd').addEventListener('submit', async e=>{
 });
 
 function show(mode){
+  $('logoutTop').hidden = mode!=='admin';
   $('loginPanel').hidden = mode!=='login';
   $('adminArea').hidden = mode!=='admin';
   $('state').hidden = mode!=='msg';
@@ -508,6 +509,7 @@ async function enter(){
   try { myId = (await sb.auth.getUser()).data.user?.id || null; } catch(_){}
   show('admin'); await loadAll(); return true;
 }
+$('logoutTop').onclick = async ()=>{ await sb.auth.signOut(); show('login'); };
 $('loginForm').addEventListener('submit', async e=>{
   e.preventDefault(); $('loginMsg').textContent = '';
   const {error} = await sb.auth.signInWithPassword({email:$('email').value.trim(), password:$('pass').value});
