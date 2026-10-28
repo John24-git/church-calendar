@@ -277,6 +277,9 @@ footer input{width:11rem}
     <details class="signup">
       <summary>إنشاء حساب</summary>
       <form id="signupForm">
+        <label>الاسم<input id="suName" type="text" maxlength="60" autocomplete="name" required></label>
+        <label>رقم التليفون<input id="suPhone" type="tel" autocomplete="tel" dir="ltr" placeholder="01xxxxxxxxx" required></label>
+        <label>الخدمة اللي إنت أمينها<select id="suService" required><option value="">اختار الخدمة…</option></select></label>
         <label>الإيميل<input id="suEmail" type="email" autocomplete="email" dir="ltr" required></label>
         <label>كلمة السر<input id="suPass" type="password" minlength="8" autocomplete="new-password" dir="ltr" required></label>
         <ul class="pw-rules" id="pwRules">
@@ -290,7 +293,7 @@ footer input{width:11rem}
         <button class="btn" type="submit">إنشاء حساب</button>
         <span class="status" id="suMsg" role="status"></span>
       </form>
-      <p class="status">بعد ما تعمل الحساب، المشرف هو اللي يفعّله ويحدد خدمتك.</p>
+      <p class="status">بعد ما تعمل الحساب، المشرف هيراجع بياناتك ويفعّل حسابك على الخدمة اللي اخترتها.</p>
     </details>
   </div>
 </dialog>
@@ -387,6 +390,7 @@ $('fDate').value = sel;
 
 function setServices(list){
   SERVICES = list; SV = Object.fromEntries(list.map(s=>[s.id,s]));
+  $('suService').innerHTML = '<option value="">اختار الخدمة…</option>' + list.map(x=>`<option value="${x.id}">${esc(x.name)}</option>`).join('') + '<option value="general">الأمين العام</option>';
   $('legend').innerHTML = list.map(s=>`<span style="--h:${s.h}"><i></i>${esc(s.name)}</span>`).join('');
   fillServiceSelect();
 }
@@ -687,7 +691,7 @@ $('suPass').addEventListener('input', ()=>{
 $('signupForm').addEventListener('submit', async e=>{
   e.preventDefault(); $('suMsg').textContent = '';
   if (!pwOk($('suPass').value)) { $('suMsg').textContent = 'كلمة السر ضعيفة. كمّل الشروط اللي فوق لحد ما كلها تبقى ✓.'; return; }
-  const {data, error} = await sb.auth.signUp({email:$('suEmail').value.trim(), password:$('suPass').value});
+  const {data, error} = await sb.auth.signUp({email:$('suEmail').value.trim(), password:$('suPass').value, options:{data:{name:$('suName').value.trim().slice(0,60), phone:$('suPhone').value.trim().slice(0,20), service:$('suService').value}}});
   if (error) { $('suMsg').textContent = /registered|exists/i.test(error.message) ? 'الإيميل ده عنده حساب بالفعل.' : 'مقدرناش نعمل الحساب: ' + error.message; return; }
   if (data.session) await sb.auth.signOut();
   $('suMsg').textContent = 'اتعمل الحساب. لو وصلك إيميل تأكيد افتحه، وبعدين استنى المشرف يفعّل حسابك ويحدد خدمتك.';
