@@ -4,7 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light dark">
-<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="icon" type="image/svg+xml" href="favicon.svg?v=2">
+<link rel="shortcut icon" href="favicon.svg?v=2">
 <meta name="theme-color" media="(prefers-color-scheme: light)" content="#6e1220">
 <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#4a0f1a">
 <title>كاليندر كنيسة السيدة العذراء والقديس أثناسيوس</title>
@@ -42,13 +43,47 @@ h1,h2,h3{font-family:var(--font-display);margin:0;text-wrap:balance;line-height:
 h2{font-size:1.25rem;font-weight:700} h3{font-size:1rem}
 
 /* banner */
-.band{background:var(--brand);color:var(--brand-fg);margin-inline:-16px;padding:18px 16px 16px;text-align:center;border-bottom:3px double var(--gold)}
-.band-in{max-width:1180px;margin-inline:auto;display:grid;gap:4px;justify-items:center}
-.kicker{font-family:var(--font-display);font-size:1rem;color:var(--gold);letter-spacing:.02em}
-.cross{width:2.6rem;height:2.6rem;color:var(--gold)}
-.band h1{font-size:1.75rem;font-weight:700}
-.band .loc{font-family:var(--font-display);font-size:1.1rem;color:var(--gold)}
-.band p{margin:.4rem 0 0;max-width:60ch;font-size:.92rem;opacity:.92}
+.top{background:var(--brand);color:var(--brand-fg);margin-inline:-16px;border-bottom:3px double var(--gold)}
+.pray{font-family:var(--font-display);font-size:.85rem;color:var(--gold);text-align:center;padding:5px 16px 0;opacity:.9}
+.top-in{max-width:1180px;margin-inline:auto;padding:8px 16px 12px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:12px;min-width:0}
+.cross{width:2.5rem;height:2.5rem;color:var(--gold);flex:none}
+.brand-t{min-width:0}
+.brand-t h1{font-size:1.3rem;font-weight:700;color:var(--brand-fg)}
+.brand-t span{display:block;font-size:.82rem;color:var(--gold)}
+.top-act{display:flex;align-items:center;gap:8px}
+.btn.gold{background:var(--gold);color:#2b1b1d;border-color:var(--gold-deep);font-weight:600}
+.menu{position:relative}
+.usr{display:flex;align-items:center;gap:8px;background:#ffffff1a;border:1px solid var(--gold);color:var(--brand-fg);border-radius:99px;padding:4px 12px 4px 8px}
+.av{width:2rem;height:2rem;border-radius:50%;background:var(--gold);color:#2b1b1d;display:grid;place-items:center;font-weight:700;flex:none}
+.usr-t{display:grid;text-align:start;line-height:1.25;min-width:0}
+.usr-t b{font-weight:600;font-size:.9rem;max-width:9rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.usr-t small{color:var(--gold);font-size:.74rem;max-width:9rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.menu-list{position:absolute;inset-inline-end:0;top:calc(100% + 6px);min-width:13rem;background:var(--surface);color:var(--fg);border:1px solid var(--gold);border-radius:8px;box-shadow:0 10px 30px #0004;display:grid;padding:4px;z-index:20}
+.menu-list>*{display:block;text-align:start;background:none;border:0;padding:9px 12px;border-radius:6px;color:inherit;text-decoration:none;font:inherit;cursor:pointer}
+.menu-list>*:hover{background:var(--surface2)}
+.menu-list .danger{color:var(--lock)}
+.cal-tools{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.btn.sm{padding:.35rem .8rem;font-size:.9rem}
+.btn.block{width:100%;margin-top:12px}
+.hint{margin:10px 0 0}
+.toast{position:fixed;bottom:20px;inset-inline:16px;margin-inline:auto;width:fit-content;max-width:min(92vw,440px);background:var(--brand);color:var(--brand-fg);border:1px solid var(--gold);border-radius:8px;padding:10px 16px;z-index:60;box-shadow:0 8px 24px #0005;font-size:.92rem}
+dialog.dlg{border:1px solid var(--gold);border-radius:10px;padding:0;background:var(--surface);color:var(--fg);width:min(500px,calc(100vw - 24px));max-height:92vh;box-shadow:0 20px 60px #0007;overflow:auto}
+dialog.dlg::backdrop{background:#170d11b8}
+.dlg-h{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px 16px;background:var(--brand);color:var(--brand-fg);border-bottom:2px solid var(--gold);position:sticky;top:0;z-index:1}
+.dlg-h h2{color:var(--brand-fg);font-size:1.2rem}
+.dlg-b{padding:16px}
+.dlg-b form{margin-top:0}
+.x{background:none;border:0;color:var(--brand-fg);font-size:1.6rem;line-height:1;padding:0 6px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:520px){.row2{grid-template-columns:1fr}}
+.actions{display:flex;gap:8px;align-items:center}
+.actions .primary{flex:1}
+.dir{display:grid;gap:8px}
+.dir .p{display:flex;justify-content:space-between;align-items:center;gap:10px;border:1px solid var(--line);border-radius:8px;padding:10px 12px;background:var(--surface2)}
+.dir .p small{display:block;color:var(--muted)}
+.dir a{color:var(--accent);font-weight:600;direction:ltr;white-space:nowrap}
+.tel{color:var(--accent);direction:ltr;unicode-bidi:embed;white-space:nowrap}
 .strip{height:12px;margin-inline:-16px;background:var(--surface2) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='22' height='12'%3E%3Cpath d='M11 1.5v9M6.5 6h9' stroke='%23c9a24a' stroke-width='1.6'/%3E%3C/svg%3E") repeat-x center;border-bottom:1px solid var(--line)}
 
 .main{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(0,1fr);gap:20px;align-items:start}
@@ -85,7 +120,9 @@ button{font:inherit;color:inherit;cursor:pointer}
   .chip{width:.6rem;height:.6rem;padding:0;border-radius:50%;font-size:0;background:hsl(var(--h) 60% 52%)}
   .more{display:none}
   .chip.pend{background:transparent;border:2px solid hsl(var(--h) 60% 52%)}
-  .band h1{font-size:1.35rem}
+  .brand-t h1{font-size:1.05rem}
+  .brand-t span{display:none}
+  .usr-t{display:none}
 }
 
 .legend{display:flex;flex-wrap:wrap;gap:6px 10px;margin-top:14px;font-size:.8rem;color:var(--muted)}
@@ -140,13 +177,33 @@ footer input{width:11rem}
   </symbol>
 </svg>
 
-<header class="band">
-  <div class="band-in">
-    <div class="kicker">بسم الآب والابن والروح القدس، إله واحد. آمين</div>
-    <svg class="cross" aria-hidden="true"><use href="#cc"/></svg>
-    <h1>كنيسة السيدة العذراء والقديس أثناسيوس الرسولي</h1>
-    <div class="loc">دار السلام</div>
-    <p>تقويم تنسيق مواعيد خدمات التربية الكنسية. الكاليندر متاح للكل، والحجز بحساب أمين الخدمة.</p>
+<header class="top">
+  <div class="pray">بسم الآب والابن والروح القدس، إله واحد. آمين</div>
+  <div class="top-in">
+    <div class="brand">
+      <svg class="cross" aria-hidden="true"><use href="#cc"/></svg>
+      <div class="brand-t">
+        <h1>كنيسة السيدة العذراء والقديس أثناسيوس الرسولي</h1>
+        <span>دار السلام · تنسيق مواعيد خدمات التربية الكنسية</span>
+      </div>
+    </div>
+    <div class="top-act">
+      <button class="btn gold" id="loginBtn" type="button" hidden>دخول الأمناء</button>
+      <div class="menu" id="userbar" hidden>
+        <button class="usr" id="userBtn" type="button" aria-haspopup="true" aria-expanded="false">
+          <span class="av" id="userAv"></span>
+          <span class="usr-t"><b id="userName"></b><small id="userRole"></small></span>
+          <span class="caret" aria-hidden="true">▾</span>
+        </button>
+        <div class="menu-list" id="menuList" hidden>
+          <button type="button" id="mProfile">ملفي الشخصي</button>
+          <button type="button" id="mDir">دليل الأمناء</button>
+          <a id="inboxLink" href="approvals.html">صندوق الطلبات</a>
+          <a id="adminLink" href="admin.html">صفحة الإدارة</a>
+          <button type="button" id="logout" class="danger">خروج</button>
+        </div>
+      </div>
+    </div>
   </div>
 </header>
 <div class="strip" aria-hidden="true"></div>
@@ -156,10 +213,13 @@ footer input{width:11rem}
     <section class="panel" aria-label="الكاليندر">
       <div class="cal-head">
         <h2 id="monthTitle"></h2>
-        <div class="nav">
-          <button class="btn" id="today" type="button">النهارده</button>
-          <button class="btn" id="next" type="button" aria-label="الشهر اللي بعده">›</button>
-          <button class="btn" id="prev" type="button" aria-label="الشهر اللي قبله">‹</button>
+        <div class="cal-tools">
+          <button class="btn primary sm" id="newBtn" type="button" hidden>+ حجز جديد</button>
+          <div class="nav">
+            <button class="btn" id="prev" type="button" aria-label="الشهر اللي قبله">‹</button>
+            <button class="btn" id="today" type="button">النهارده</button>
+            <button class="btn" id="next" type="button" aria-label="الشهر اللي بعده">›</button>
+          </div>
         </div>
       </div>
       <div class="grid" id="grid"></div>
@@ -171,58 +231,84 @@ footer input{width:11rem}
       <section class="panel dayinfo" aria-live="polite">
         <h2 id="dayTitle"></h2>
         <div id="dayBody"></div>
-        <div class="adminbar" id="userbar" hidden>
-          <span id="userTxt"></span>
-          <span class="userbar-links">
-            <a class="lnk" id="inboxLink" href="approvals.html">صندوق الطلبات</a>
-            <a class="lnk" id="adminLink" href="admin.html">صفحة الإدارة</a>
-            <button class="lnk" id="logout" type="button">خروج</button>
-          </span>
-        </div>
+        <button class="btn primary block" id="dayBook" type="button" hidden>احجز في اليوم ده</button>
+        <p class="status hint" id="loginHint" hidden>الكاليندر متاح للكل. للحجز ادخل بحساب أمين الخدمة.</p>
       </section>
-
-      <section class="panel" id="loginBox" hidden>
-        <h2>دخول الأمناء</h2>
-        <p class="status">الحجز بيتم بحساب أمين الخدمة. الكاليندر نفسه متاح للكل من غير دخول.</p>
-        <form id="loginForm">
-          <label>الإيميل<input id="lEmail" type="email" autocomplete="username" dir="ltr" required></label>
-          <label>كلمة السر<input id="lPass" type="password" autocomplete="current-password" dir="ltr" required></label>
-          <button class="btn primary" type="submit">دخول</button>
-          <span class="status" id="loginMsg" role="status"></span>
-        </form>
-        <details class="signup">
-          <summary>معنديش حساب</summary>
-          <form id="signupForm">
-            <label>الإيميل<input id="suEmail" type="email" autocomplete="email" dir="ltr" required></label>
-            <label>كلمة السر (6 حروف على الأقل)<input id="suPass" type="password" minlength="6" autocomplete="new-password" dir="ltr" required></label>
-            <button class="btn" type="submit">اعمل الحساب</button>
-            <span class="status" id="suMsg" role="status"></span>
-          </form>
-          <p class="status">بعد ما تعمل الحساب، المشرف هو اللي يفعّله ويحدد خدمتك.</p>
-        </details>
-      </section>
-
       <section class="panel" id="myReq" hidden><h2>طلباتي</h2><div id="myReqBody"></div></section>
-
-      <section class="panel" id="formPanel" hidden>
-        <h2 id="formTitle">حجز جديد</h2>
-        <form id="form" autocomplete="off">
-          <div class="editbar" id="editbar" hidden><span id="editText"></span><button class="lnk" id="editCancel" type="button">سيب التعديل</button></div>
-          <label>التاريخ<input id="fDate" type="date" required></label>
-          <label>الخدمة<select id="fService" required></select></label>
-          <label>النشاط (اختياري)<input id="fAct" type="text" list="acts" maxlength="40" placeholder="رحلة، كورس، خلوة…"></label>
-          <datalist id="acts"></datalist>
-          <label>المكان (اختياري)<input id="fPlace" type="text" maxlength="80" placeholder="مثلاً: دير الأنبا برسوم العريان"></label>
-          <label>ملاحظة (اختياري)<textarea id="fNote" maxlength="200" placeholder="الغرض من الحجز أو الوقت"></textarea></label>
-          <div class="status">تاريخ الإخطار بيتسجل تلقائي بتاريخ يوم الحجز.</div>
-          <div id="check"></div>
-          <button class="btn primary" id="submit" type="submit">احجز الميعاد</button>
-          <div class="status" id="status" role="status"></div>
-        </form>
-      </section>
     </aside>
   </div>
 </div>
+
+<div class="toast" id="toast" role="status" hidden></div>
+
+<dialog id="loginDlg" class="dlg">
+  <div class="dlg-h"><h2>دخول الأمناء</h2><button class="x" type="button" data-close aria-label="إغلاق">×</button></div>
+  <div class="dlg-b">
+    <form id="loginForm">
+      <label>الإيميل<input id="lEmail" type="email" autocomplete="username" dir="ltr" required></label>
+      <label>كلمة السر<input id="lPass" type="password" autocomplete="current-password" dir="ltr" required></label>
+      <button class="btn primary" type="submit">دخول</button>
+      <span class="status" id="loginMsg" role="status"></span>
+    </form>
+    <details class="signup">
+      <summary>معنديش حساب</summary>
+      <form id="signupForm">
+        <label>الإيميل<input id="suEmail" type="email" autocomplete="email" dir="ltr" required></label>
+        <label>كلمة السر (6 حروف على الأقل)<input id="suPass" type="password" minlength="6" autocomplete="new-password" dir="ltr" required></label>
+        <button class="btn" type="submit">اعمل الحساب</button>
+        <span class="status" id="suMsg" role="status"></span>
+      </form>
+      <p class="status">بعد ما تعمل الحساب، المشرف هو اللي يفعّله ويحدد خدمتك.</p>
+    </details>
+  </div>
+</dialog>
+
+<dialog id="formDlg" class="dlg">
+  <div class="dlg-h"><h2 id="formTitle">حجز جديد</h2><button class="x" type="button" data-close aria-label="إغلاق">×</button></div>
+  <div class="dlg-b">
+    <form id="form" autocomplete="off">
+      <div class="editbar" id="editbar" hidden><span id="editText"></span></div>
+      <div class="row2">
+        <label>التاريخ<input id="fDate" type="date" required></label>
+        <label>الخدمة<select id="fService" required></select></label>
+      </div>
+      <div class="row2">
+        <label>النشاط<input id="fAct" type="text" list="acts" maxlength="40" placeholder="رحلة، كورس، خلوة…"></label>
+        <label>المكان<input id="fPlace" type="text" maxlength="80" placeholder="مثلاً: دير الأنبا برسوم"></label>
+      </div>
+      <datalist id="acts"></datalist>
+      <label>ملاحظة<textarea id="fNote" maxlength="200" placeholder="الغرض من الحجز أو الوقت"></textarea></label>
+      <div id="check"></div>
+      <div class="actions">
+        <button class="btn primary" id="submit" type="submit">احجز الميعاد</button>
+        <button class="btn ghost" type="button" data-close>إلغاء</button>
+      </div>
+      <div class="status" id="status" role="status"></div>
+    </form>
+  </div>
+</dialog>
+
+<dialog id="profileDlg" class="dlg">
+  <div class="dlg-h"><h2>ملفي الشخصي</h2><button class="x" type="button" data-close aria-label="إغلاق">×</button></div>
+  <div class="dlg-b">
+    <form id="profileForm">
+      <label>الاسم<input id="pName" type="text" maxlength="60" required></label>
+      <label>رقم التليفون (للتواصل بين الأمناء)<input id="pPhone" type="tel" dir="ltr" maxlength="20" placeholder="01xxxxxxxxx"></label>
+      <label>الإيميل<input id="pEmail" type="email" dir="ltr" readonly></label>
+      <p class="status">رقمك بيظهر للأمناء المسجلين بس، مش للزوار.</p>
+      <div class="actions">
+        <button class="btn primary" type="submit">حفظ</button>
+        <button class="btn ghost" type="button" data-close>إغلاق</button>
+      </div>
+      <span class="status" id="profileMsg" role="status"></span>
+    </form>
+  </div>
+</dialog>
+
+<dialog id="dirDlg" class="dlg">
+  <div class="dlg-h"><h2>دليل الأمناء</h2><button class="x" type="button" data-close aria-label="إغلاق">×</button></div>
+  <div class="dlg-b"><div id="dirBody" class="dir"></div></div>
+</dialog>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="config.js"></script>
@@ -256,10 +342,11 @@ let settings = {require_general_approval:false, allow_service_cancel:true};
 let exceptions = [], seasons = [];
 const loggedIn = () => me.role !== 'none';
 const hasInbox = () => ['super','general','diaconate'].includes(me.role);
-const roleLabel = () => ({
+const roleText = (role, service) => ({
   super:'مشرف عام', general:'أمين عام خدمة التربية الكنسية', diaconate:'أمين خدمة الشماسية',
-  service: 'أمين خدمة ' + (SV[me.service]?.name || '')
-})[me.role] || '';
+  service: 'أمين خدمة ' + (SV[service]?.name || '')
+})[role] || '';
+const roleLabel = () => roleText(me.role, me.service);
 
 $('acts');
 const setActivities = () => { $('acts').innerHTML = ACTIVITIES.map(a=>`<option value="${esc(a)}">`).join(''); };
@@ -371,7 +458,7 @@ function renderDay(){
     const needsTxt = b.needs==='general' ? 'بانتظار موافقة الأمين العام' : 'بانتظار موافقة أمين خدمة الشماسية';
     return `<li><div><span class="tag" style="--h:${SV[b.service]?.h??0}">${sname(b.service)||'خدمة'}</span>
       ${b.activity||b.place?`<div class="note"><b>${esc(b.activity)}</b>${b.activity&&b.place?' · ':''}${esc(b.place)}</div>`:''}
-      <div class="who">الحاجز: ${esc(b.name)}</div>
+      <div class="who">الحاجز: ${esc(b.name)}${b.phone?` · <a class="tel" href="tel:${esc(b.phone)}">${esc(b.phone)}</a>`:''}</div>
       ${b.status==='pending'?`<div class="pendtag">${needsTxt}</div>`:''}
       ${b.note?`<div class="note">${esc(b.note)}</div>`:''}
       ${b.notifyDate?`<div class="who">تاريخ الإخطار: ${shortDate(b.notifyDate)}</div>`:''}</div>
@@ -381,14 +468,18 @@ function renderDay(){
 
 function renderForm(){
   const e = !!editing;
-  $('loginBox').hidden = loggedIn() || !sb;
-  $('formPanel').hidden = !loggedIn();
+  $('loginBtn').hidden = loggedIn() || !sb;
+  $('loginHint').hidden = loggedIn() || !sb;
+  $('newBtn').hidden = !loggedIn();
+  $('dayBook').hidden = !loggedIn() || sel < todayIso();
   $('formTitle').textContent = e ? 'تعديل حجز' : 'حجز جديد';
   $('editbar').hidden = !e;
   if (e) $('editText').textContent = `بتعدّل حجز ${SV[editing.service]?.name||''} يوم ${shortDate(editing.date)}`;
   $('userbar').hidden = !loggedIn();
   if (loggedIn()){
-    $('userTxt').textContent = `${me.name || ''} · ${roleLabel()}`;
+    $('userName').textContent = me.name || '';
+    $('userRole').textContent = roleLabel();
+    $('userAv').textContent = [...(me.name || '؟')][0];
     $('adminLink').hidden = me.role!=='super';
     $('inboxLink').hidden = !hasInbox();
     $('inboxLink').textContent = (me.role==='diaconate' ? 'طلبات الشماسية' : 'صندوق الطلبات والإشعارات') + (inboxCount ? ` (${inboxCount})` : '');
@@ -405,8 +496,14 @@ function select(k, jump){
 }
 function say(text){
   const el = $('status'); el.textContent = text;
-  clearTimeout(toastTimer); toastTimer = setTimeout(()=>{ el.textContent=''; }, 8000);
+  const t = $('toast'); t.textContent = text; t.hidden = !text || $('formDlg').open;
+  clearTimeout(toastTimer); toastTimer = setTimeout(()=>{ el.textContent=''; t.hidden = true; }, 5000);
 }
+function openForm(){
+  fillServiceSelect(); renderAll();
+  if (!$('formDlg').open) $('formDlg').showModal();
+}
+function closeForm(){ if ($('formDlg').open) $('formDlg').close(); }
 function resetForm(){ editing = null; $('fNote').value=''; $('fAct').value=''; $('fPlace').value=''; }
 
 function startEdit(id){
@@ -414,7 +511,7 @@ function startEdit(id){
   editing = b;
   $('fDate').value = b.date; fillServiceSelect(); $('fService').value = b.service;
   $('fAct').value = b.activity; $('fPlace').value = b.place; $('fNote').value = b.note;
-  renderAll(); $('formPanel').scrollIntoView({behavior:'smooth', block:'start'});
+  openForm();
 }
 
 /* تحميل البيانات */
@@ -454,7 +551,7 @@ async function reloadBookings(){
 }
 async function loadMe(){
   const r = await rpc('my_role');
-  me = {role:r.role||'none', service:r.service||null, name:r.name||''};
+  me = {role:r.role||'none', service:r.service||null, name:r.name||'', phone:r.phone||'', email:r.email||''};
   fillServiceSelect();
 }
 
@@ -464,7 +561,40 @@ $('next').onclick = ()=>{ view = new Date(view.getFullYear(), view.getMonth()+1,
 $('today').onclick = ()=>{ view = new Date(); view.setDate(1); select(todayIso(), true); };
 $('fDate').addEventListener('change', ()=>{ if($('fDate').value) select($('fDate').value, true); });
 $('fService').addEventListener('change', renderCheck);
-$('editCancel').onclick = ()=>{ resetForm(); renderAll(); };
+/* النوافذ المنبثقة */
+document.querySelectorAll('dialog.dlg').forEach(d=>{
+  d.addEventListener('click', e=>{ if (e.target===d || e.target.closest('[data-close]')) d.close(); });
+});
+$('formDlg').addEventListener('close', ()=>{ if (editing) resetForm(); renderAll(); });
+$('newBtn').onclick = ()=>{ resetForm(); $('fDate').value = sel < todayIso() ? todayIso() : sel; openForm(); };
+$('dayBook').onclick = $('newBtn').onclick;
+$('loginBtn').onclick = ()=>$('loginDlg').showModal();
+const menuToggle = open => { $('menuList').hidden = !open; $('userBtn').setAttribute('aria-expanded', String(open)); };
+$('userBtn').onclick = e=>{ e.stopPropagation(); menuToggle($('menuList').hidden); };
+document.addEventListener('click', e=>{ if (!e.target.closest('#userbar')) menuToggle(false); });
+document.addEventListener('keydown', e=>{ if (e.key==='Escape') menuToggle(false); });
+
+$('mProfile').onclick = ()=>{
+  menuToggle(false);
+  $('pName').value = me.name || ''; $('pPhone').value = me.phone || ''; $('pEmail').value = me.email || '';
+  $('profileMsg').textContent = ''; $('profileDlg').showModal();
+};
+$('profileForm').addEventListener('submit', async e=>{
+  e.preventDefault();
+  try {
+    const r = await rpc('set_my_profile', {p_name:$('pName').value.trim(), p_phone:$('pPhone').value.trim()});
+    if (!r.ok) { $('profileMsg').textContent = r.error; return; }
+    await loadMe(); await reloadBookings(); renderAll();
+    $('profileDlg').close(); say('اتحفظ الملف الشخصي.');
+  } catch(err){ $('profileMsg').textContent = 'مقدرناش نحفظ. جرّب تاني.'; }
+});
+$('mDir').onclick = async ()=>{
+  menuToggle(false); $('dirBody').innerHTML = '<p class="status">جاري التحميل…</p>'; $('dirDlg').showModal();
+  try {
+    const list = await rpc('directory');
+    $('dirBody').innerHTML = list.length ? list.map(p=>`<div class="p"><div><b>${esc(p.name||'—')}</b><small>${esc(roleText(p.role, p.service))}</small></div>${p.phone?`<a href="tel:${esc(p.phone)}">${esc(p.phone)}</a>`:'<small>مفيش رقم</small>'}</div>`).join('') : '<p class="empty">مفيش أمناء لسه.</p>';
+  } catch(err){ $('dirBody').innerHTML = '<p class="empty">مقدرناش نحمّل الدليل.</p>'; }
+};
 
 $('dayBody').addEventListener('click', async e=>{
   const ed = e.target.closest('[data-edit]'); if (ed) { startEdit(ed.dataset.edit); return; }
@@ -492,12 +622,12 @@ $('form').addEventListener('submit', async e=>{
     if (editing){
       const r = await rpc('update_booking', {p_id:editing.id, ...args});
       await reloadBookings();
-      if (r.ok){ resetForm(); sel = date; view = parse(date); view.setDate(1); say(r.status==='pending' ? 'اتعدّل الحجز وبانتظار الموافقة.' : 'اتعدّل الحجز.'); }
+      if (r.ok){ resetForm(); sel = date; view = parse(date); view.setDate(1); closeForm(); say(r.status==='pending' ? 'اتعدّل الحجز وبانتظار الموافقة.' : 'اتعدّل الحجز.'); }
       else say(r.error);
     } else {
       const r = await rpc('add_booking', args);
       await reloadBookings();
-      if (r.ok){ resetForm(); sel = date; view = parse(date); view.setDate(1); say(r.status==='pending' ? 'اتبعت الطلب، وبانتظار الموافقة. هتلاقيه في "طلباتي".' : 'اتسجّل الحجز.'); }
+      if (r.ok){ resetForm(); sel = date; view = parse(date); view.setDate(1); closeForm(); say(r.status==='pending' ? 'اتبعت الطلب، وبانتظار الموافقة. هتلاقيه في "طلباتي".' : 'اتسجّل الحجز.'); }
       else say(r.error);
     }
   } catch(err){ say('حصلت مشكلة وقت الحفظ. اتأكد من النت وجرّب تاني.'); }
@@ -512,7 +642,7 @@ $('loginForm').addEventListener('submit', async e=>{
     if (error) { $('loginMsg').textContent = 'الإيميل أو كلمة السر غلط.'; return; }
     await loadMe();
     if (!loggedIn()){ await sb.auth.signOut(); $('loginMsg').textContent = 'الحساب ده لسه متفعّلش. استنى المشرف يفعّله ويحدد خدمتك.'; return; }
-    $('lPass').value = ''; await reloadBookings();
+    $('lPass').value = ''; $('loginDlg').close(); await reloadBookings();
   } catch(err){ $('loginMsg').textContent = 'مقدرناش نتأكد. جرّب تاني.'; }
   renderAll();
 });
@@ -526,7 +656,7 @@ $('signupForm').addEventListener('submit', async e=>{
 });
 $('logout').onclick = async ()=>{
   try { await sb.auth.signOut(); } catch(e){}
-  me = {role:'none', service:null, name:''}; inboxCount = 0; resetForm(); fillServiceSelect(); $('myReq').hidden = true; renderAll();
+  menuToggle(false); me = {role:'none', service:null, name:'', phone:'', email:''}; inboxCount = 0; resetForm(); fillServiceSelect(); $('myReq').hidden = true; renderAll();
 };
 
 async function start(){
