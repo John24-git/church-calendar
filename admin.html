@@ -372,6 +372,7 @@ async function loadUsers(){
         <select data-s aria-label="الخدمة" ${(u.role==='service' || (u.role==='none' && u.req_service && u.req_service!=='general'))?'':'hidden'}><option value="">اختار الخدمة…</option>${svOpts(u.service || (u.req_service!=='general' ? u.req_service : ''))}</select>
         <input data-n value="${esc(u.name)}" maxlength="60" placeholder="الاسم" aria-label="الاسم">
         <button class="btn sm" data-saveu type="button">حفظ</button>
+        <button class="btn sm danger" data-delu type="button">مسح الحساب</button>
       </div></div>`;
   }).join('') || '<span class="status">مفيش مستخدمين.</span>';
 }
@@ -380,6 +381,15 @@ $('userList').addEventListener('change', e=>{
   r.closest('.urow').querySelector('[data-s]').hidden = r.value!=='service';
 });
 $('userList').addEventListener('click', async e=>{
+  const d = e.target.closest('[data-delu]');
+  if (d) {
+    const row = d.closest('.urow'), mail = row.querySelector('.grow').textContent;
+    if (!confirm('تمسح حساب ' + mail + ' نهائيًا؟ مش هيقدر يدخل تاني، لكن حجوزاته القديمة هتفضل في الكاليندر.')) return;
+    const {data, error} = await sb.rpc('delete_user', {p_user:row.dataset.uid});
+    if (error) return fail(error);
+    if (!data.ok) return say(data.error);
+    say('اتمسح الحساب.'); loadUsers(); return;
+  }
   const b = e.target.closest('[data-saveu]'); if (!b) return;
   const row = b.closest('.urow');
   const role = row.querySelector('[data-r]').value;
