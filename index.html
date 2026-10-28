@@ -265,6 +265,24 @@ footer input{width:11rem}
   </div>
 </dialog>
 
+<dialog id="resetDlg" class="dlg">
+  <div class="dlg-h"><h2>كلمة سر جديدة</h2><button class="x" type="button" data-close aria-label="إغلاق">×</button></div>
+  <div class="dlg-b">
+    <form id="resetForm">
+      <label>كلمة السر الجديدة<input id="rpPass" type="password" minlength="8" autocomplete="new-password" dir="ltr" required></label>
+      <ul class="pw-rules" id="rpRules">
+        <li data-r="len">8 حروف أو أرقام على الأقل</li>
+        <li data-r="up">حرف إنجليزي كبير (A-Z)</li>
+        <li data-r="lo">حرف إنجليزي صغير (a-z)</li>
+        <li data-r="num">رقم (0-9)</li>
+        <li data-r="sym">رمز مثل ! @ # $ %</li>
+      </ul>
+      <button class="btn primary" type="submit">حفظ كلمة السر</button>
+      <span class="status" id="rpMsg" role="status"></span>
+    </form>
+  </div>
+</dialog>
+
 <dialog id="loginDlg" class="dlg">
   <div class="dlg-h"><h2>تسجيل دخول</h2><button class="x" type="button" data-close aria-label="إغلاق">×</button></div>
   <div class="dlg-b">
@@ -272,6 +290,7 @@ footer input{width:11rem}
       <label>الإيميل<input id="lEmail" type="email" autocomplete="username" dir="ltr" required></label>
       <label>كلمة السر<input id="lPass" type="password" autocomplete="current-password" dir="ltr" required></label>
       <button class="btn primary" type="submit">تسجيل دخول</button>
+      <button class="lnk" id="forgotBtn" type="button">نسيت كلمة السر؟</button>
       <span class="status" id="loginMsg" role="status"></span>
     </form>
     <details class="signup">
@@ -347,6 +366,7 @@ footer input{width:11rem}
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="config.js"></script>
+<script src="pw.js"></script>
 <script>
 let ACTIVITIES = ['رحلة','كورس','خلوة','معسكر','مؤتمر','حفلة','مسرح','يوم روحي','يوم رياضي','كرنفال','قافلة'];
 const MONTHS = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
@@ -690,6 +710,26 @@ function pwOk(v){ return Object.values(pwChecks).every(f=>f(v)); }
 $('suPass').addEventListener('input', ()=>{
   const v = $('suPass').value;
   $('pwRules').querySelectorAll('li').forEach(li=>li.classList.toggle('ok', pwChecks[li.dataset.r](v)));
+});
+$('forgotBtn').onclick = async ()=>{
+  const email = $('lEmail').value.trim();
+  if (!email) { $('loginMsg').textContent = 'اكتب إيميلك فوق الأول وبعدين اضغط "نسيت كلمة السر".'; $('lEmail').focus(); return; }
+  $('loginMsg').textContent = 'بنبعتلك الرابط...';
+  const {error} = await sb.auth.resetPasswordForEmail(email, {redirectTo: location.origin + location.pathname});
+  $('loginMsg').textContent = error ? 'مقدرناش نبعت الإيميل دلوقتي. جرّب كمان شوية.' : 'لو الإيميل ده عنده حساب، هيوصله رابط لتغيير كلمة السر. شوف الـ Inbox والـ Spam.';
+};
+sb.auth.onAuthStateChange(ev=>{ if (ev==='PASSWORD_RECOVERY') { $('rpPass').value=''; $('rpMsg').textContent=''; $('resetDlg').showModal(); } });
+$('rpPass').addEventListener('input', ()=>{
+  const v = $('rpPass').value;
+  $('rpRules').querySelectorAll('li').forEach(li=>li.classList.toggle('ok', pwChecks[li.dataset.r](v)));
+});
+$('resetForm').addEventListener('submit', async e=>{
+  e.preventDefault();
+  if (!pwOk($('rpPass').value)) { $('rpMsg').textContent = 'كلمة السر ضعيفة. كمّل الشروط اللي فوق.'; return; }
+  const {error} = await sb.auth.updateUser({password:$('rpPass').value});
+  if (error) { $('rpMsg').textContent = 'مقدرناش نغيّر كلمة السر: ' + error.message; return; }
+  await sb.auth.signOut(); history.replaceState(null, '', location.pathname);
+  $('resetDlg').close(); $('loginMsg').textContent = 'اتغيّرت كلمة السر. سجّل دخول بيها.'; $('loginDlg').showModal();
 });
 $('signupForm').addEventListener('submit', async e=>{
   e.preventDefault(); $('suMsg').textContent = '';
