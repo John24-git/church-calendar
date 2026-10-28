@@ -3,16 +3,23 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="color-scheme" content="light dark">
+<meta name="color-scheme" content="only light">
+<meta name="supported-color-schemes" content="light">
 <link rel="icon" type="image/svg+xml" href="favicon.svg?v=2">
 <link rel="shortcut icon" href="favicon.svg?v=2">
-<meta name="theme-color" media="(prefers-color-scheme: light)" content="#6e1220">
-<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#4a0f1a">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="كاليندر الكنيسة">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#6e1220">
 <title>كاليندر كنيسة السيدة العذراء والقديس أثناسيوس</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap">
 <style>
 /* Layout: right-to-left. A burgundy and gold banner with a Coptic cross, then the month grid beside a side panel (selected day + booking form). */
 :root{
+  color-scheme:only light;
   --bg:#f3eee4; --surface:#fffdf8; --surface2:#f1eadb; --fg:#2b1b1d; --muted:#6b5a58; --line:#dccfb6;
   --brand:#6e1220; --brand-fg:#f7ecd2; --gold:#c9a24a; --gold-deep:#8f6b1c;
   --accent:#7b1626; --btn-bg:#7b1626; --btn-fg:#f7ecd2;
@@ -21,18 +28,6 @@
   --font-display:"Amiri","Noto Naskh Arabic","Traditional Arabic",serif;
   --font-body:"IBM Plex Sans Arabic","Segoe UI",Tahoma,sans-serif;
 }
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  --bg:#170d11; --surface:#2a1820; --surface2:#36212b; --fg:#f6ecd9; --muted:#c9b8a0; --line:#5d3a47;
-  --brand:#4a0f1a; --brand-fg:#f3dfae; --gold:#d6b25e; --gold-deep:#d6b25e;
-  --accent:#e0bb64; --btn-bg:#9a2236; --btn-fg:#fbf0d6;
-  --lock:#ff9aa7; --lock-bg:#3d1a25; --ok:#7bd6a4; --warn-bg:#3b2f10; --warn-fg:#f3d58a;
-  --cs:40%; --cl:24%; --ct:86%; color-scheme:dark}}
-:root[data-theme="dark"]{
-  --bg:#170d11; --surface:#2a1820; --surface2:#36212b; --fg:#f6ecd9; --muted:#c9b8a0; --line:#5d3a47;
-  --brand:#4a0f1a; --brand-fg:#f3dfae; --gold:#d6b25e; --gold-deep:#d6b25e;
-  --accent:#e0bb64; --btn-bg:#9a2236; --btn-fg:#fbf0d6;
-  --lock:#ff9aa7; --lock-bg:#3d1a25; --ok:#7bd6a4; --warn-bg:#3b2f10; --warn-fg:#f3d58a;
-  --cs:40%; --cl:24%; --ct:86%; color-scheme:dark}
 
 *{box-sizing:border-box}
 [hidden]{display:none!important}
@@ -83,6 +78,11 @@ dialog.dlg::backdrop{background:#170d11b8}
 .dir .p{display:flex;justify-content:space-between;align-items:center;gap:10px;border:1px solid var(--line);border-radius:8px;padding:10px 12px;background:var(--surface2)}
 .dir .p small{display:block;color:var(--muted)}
 .dir a{color:var(--accent);font-weight:600;direction:ltr;white-space:nowrap}
+.install{display:grid;gap:12px;justify-items:center;text-align:center}
+.install img{border-radius:16px;border:2px solid var(--gold)}
+.install p{margin:0}
+.install ol{margin:0;padding-inline-start:1.3rem;text-align:start;display:grid;gap:4px}
+.install .actions{width:100%}
 .tel{color:var(--accent);direction:ltr;unicode-bidi:embed;white-space:nowrap}
 .strip{height:12px;margin-inline:-16px;background:var(--surface2) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='22' height='12'%3E%3Cpath d='M11 1.5v9M6.5 6h9' stroke='%23c9a24a' stroke-width='1.6'/%3E%3C/svg%3E") repeat-x center;border-bottom:1px solid var(--line)}
 
@@ -198,6 +198,7 @@ footer input{width:11rem}
         <div class="menu-list" id="menuList" hidden>
           <button type="button" id="mProfile">ملفي الشخصي</button>
           <button type="button" id="mDir">دليل الأمناء</button>
+          <button type="button" id="mPush" hidden>تفعيل الإشعارات</button>
           <a id="inboxLink" href="approvals.html">صندوق الطلبات</a>
           <a id="adminLink" href="admin.html">صفحة الإدارة</a>
           <button type="button" id="logout" class="danger">خروج</button>
@@ -240,6 +241,24 @@ footer input{width:11rem}
 </div>
 
 <div class="toast" id="toast" role="status" hidden></div>
+
+<dialog id="installDlg" class="dlg">
+  <div class="dlg-h"><h2>نزّل البرنامج على تليفونك</h2><button class="x" type="button" data-close aria-label="إغلاق">×</button></div>
+  <div class="dlg-b install">
+    <img src="icon-192.png" alt="" width="72" height="72">
+    <p>افتح الكاليندر بضغطة من الشاشة الرئيسية زي أي برنامج، ويوصلك إشعار لما حد يحجز ميعاد.</p>
+    <ol id="iosSteps" hidden>
+      <li>اضغط زر المشاركة <b>(مربع وسهم لفوق)</b> في Safari.</li>
+      <li>اختار <b>إضافة إلى الشاشة الرئيسية</b>.</li>
+      <li>اضغط <b>إضافة</b>.</li>
+    </ol>
+    <p class="status" id="genericSteps" hidden>من قايمة المتصفح (⋮) اختار <b>تثبيت التطبيق</b> أو <b>إضافة إلى الشاشة الرئيسية</b>.</p>
+    <div class="actions">
+      <button class="btn primary" id="installGo" type="button">نزّل البرنامج</button>
+      <button class="btn ghost" type="button" data-close>مش دلوقتي</button>
+    </div>
+  </div>
+</dialog>
 
 <dialog id="loginDlg" class="dlg">
   <div class="dlg-h"><h2>دخول الأمناء</h2><button class="x" type="button" data-close aria-label="إغلاق">×</button></div>
@@ -486,7 +505,7 @@ function renderForm(){
   }
 }
 
-function renderAll(){ renderCal(); renderDay(); renderForm(); renderCheck(); }
+function renderAll(){ renderCal(); renderDay(); renderForm(); renderCheck(); renderPushBtn && renderPushBtn(); }
 
 function select(k, jump){
   sel = k; $('fDate').value = k; pendingCancel = null;
@@ -552,7 +571,7 @@ async function reloadBookings(){
 async function loadMe(){
   const r = await rpc('my_role');
   me = {role:r.role||'none', service:r.service||null, name:r.name||'', phone:r.phone||'', email:r.email||''};
-  fillServiceSelect();
+  fillServiceSelect(); syncPush();
 }
 
 $('grid').addEventListener('click', e=>{ const b=e.target.closest('[data-d]'); if(b) select(b.dataset.d, true); });
@@ -658,6 +677,66 @@ $('logout').onclick = async ()=>{
   try { await sb.auth.signOut(); } catch(e){}
   menuToggle(false); me = {role:'none', service:null, name:'', phone:'', email:''}; inboxCount = 0; resetForm(); fillServiceSelect(); $('myReq').hidden = true; renderAll();
 };
+
+/* تنزيل البرنامج (PWA) والإشعارات */
+const isStandalone = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1);
+const isMobile = /android|iphone|ipad|ipod|mobile/i.test(navigator.userAgent) || isIOS;
+let installEvt = null;
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
+window.addEventListener('beforeinstallprompt', e=>{ e.preventDefault(); installEvt = e; });
+window.addEventListener('appinstalled', ()=>{ installEvt = null; if ($('installDlg').open) $('installDlg').close(); say('اتنزّل البرنامج.'); });
+const INSTALL_KEY = 'church-cal-install';
+function installDismissedRecently(){ try { return Date.now() - Number(localStorage.getItem(INSTALL_KEY)||0) < 7*864e5; } catch(e){ return false; } }
+function showInstall(force){
+  if (isStandalone()) return;
+  if (!force && installDismissedRecently()) return;
+  $('iosSteps').hidden = !(isIOS && !installEvt);
+  $('genericSteps').hidden = !!installEvt || isIOS;
+  $('installGo').hidden = !installEvt;
+  if (!$('installDlg').open) $('installDlg').showModal();
+}
+$('installDlg').addEventListener('close', ()=>{ try { localStorage.setItem(INSTALL_KEY, String(Date.now())); } catch(e){} });
+$('installGo').onclick = async ()=>{
+  if (!installEvt) return;
+  installEvt.prompt(); try { await installEvt.userChoice; } catch(e){}
+  installEvt = null; $('installDlg').close();
+};
+setTimeout(()=>{ if (installEvt || isMobile) showInstall(false); }, 2500);
+
+const PUSH_ROLES = ['super','general','diaconate'];
+const urlB64 = s => { const p='='.repeat((4-s.length%4)%4); const b=(s+p).replace(/-/g,'+').replace(/_/g,'/'); return Uint8Array.from(atob(b), c=>c.charCodeAt(0)); };
+const pushSupported = () => 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+async function pushSub(){ try { const reg = await navigator.serviceWorker.ready; return await reg.pushManager.getSubscription(); } catch(e){ return null; } }
+async function renderPushBtn(){
+  const show = loggedIn() && PUSH_ROLES.includes(me.role);
+  $('mPush').hidden = !show;
+  if (!show) return;
+  const on = pushSupported() && Notification.permission==='granted' && !!(await pushSub());
+  $('mPush').textContent = on ? 'إيقاف الإشعارات' : 'تفعيل الإشعارات';
+  $('mPush').dataset.on = on ? '1' : '';
+}
+async function enablePush(){
+  if (!pushSupported()){ say(isIOS && !isStandalone() ? 'على الآيفون لازم تنزّل البرنامج الأول (إضافة إلى الشاشة الرئيسية) وتفتحه منها.' : 'المتصفح ده مش بيدعم الإشعارات.'); return; }
+  if (await Notification.requestPermission() !== 'granted'){ say('الإشعارات مقفولة. فعّلها من إعدادات المتصفح للموقع.'); return; }
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    const sub = (await reg.pushManager.getSubscription()) || await reg.pushManager.subscribe({userVisibleOnly:true, applicationServerKey:urlB64(await rpc('get_vapid_key'))});
+    const j = sub.toJSON();
+    const r = await rpc('save_push_sub', {p_endpoint:j.endpoint, p_p256dh:j.keys.p256dh, p_auth:j.keys.auth});
+    say(r.ok ? 'اتفعّلت الإشعارات على الجهاز ده.' : r.error);
+  } catch(e){ say('مقدرناش نفعّل الإشعارات. جرّب تاني.'); }
+}
+async function disablePush(){
+  try { const sub = await pushSub(); if (sub){ await rpc('remove_push_sub', {p_endpoint:sub.endpoint}); await sub.unsubscribe(); } say('اتقفلت الإشعارات على الجهاز ده.'); } catch(e){}
+}
+$('mPush').onclick = async ()=>{ menuToggle(false); if ($('mPush').dataset.on) await disablePush(); else await enablePush(); renderPushBtn(); };
+/* لو الإشعارات مفعّلة قبل كده، بنربط الجهاز بالحساب اللي دخل دلوقتي */
+async function syncPush(){
+  if (!loggedIn() || !PUSH_ROLES.includes(me.role) || !pushSupported() || Notification.permission!=='granted') return;
+  const sub = await pushSub(); if (!sub) return;
+  const j = sub.toJSON(); try { await rpc('save_push_sub', {p_endpoint:j.endpoint, p_p256dh:j.keys.p256dh, p_auth:j.keys.auth}); } catch(e){}
+}
 
 async function start(){
   if (!sb){ $('loading').textContent = 'الموقع لسه محتاج إعداد: املا SUPABASE_URL و SUPABASE_ANON_KEY في ملف config.js.'; return; }
