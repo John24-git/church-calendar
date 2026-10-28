@@ -165,6 +165,11 @@ footer form{display:flex;gap:6px;margin:0;align-items:center}
 footer input{width:11rem}
 .signup{margin-top:10px}
 .signup summary{cursor:pointer;color:var(--accent);font-size:.9rem}
+.pw-rules{list-style:none;margin:6px 0 10px;padding:0;font-size:.82rem;color:var(--muted)}
+.pw-rules li{padding:2px 0}
+.pw-rules li::before{content:"○ ";color:var(--muted)}
+.pw-rules li.ok{color:#2e7d32}
+.pw-rules li.ok::before{content:"✓ ";color:#2e7d32}
 .userbar-links{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
 </style>
 </head>
@@ -184,7 +189,7 @@ footer input{width:11rem}
       <svg class="cross" aria-hidden="true"><use href="#cc"/></svg>
       <div class="brand-t">
         <h1>كنيسة السيدة العذراء والقديس أثناسيوس الرسولي</h1>
-        <span>دار السلام · تنسيق مواعيد خدمات الشماسية و التربية الكنسية</span>
+        <span>دار السلام · تنسيق مواعيد خدمات التربية الكنسية</span>
       </div>
     </div>
     <div class="top-act">
@@ -273,7 +278,15 @@ footer input{width:11rem}
       <summary>إنشاء حساب</summary>
       <form id="signupForm">
         <label>الإيميل<input id="suEmail" type="email" autocomplete="email" dir="ltr" required></label>
-        <label>كلمة السر (6 حروف على الأقل)<input id="suPass" type="password" minlength="6" autocomplete="new-password" dir="ltr" required></label>
+        <label>كلمة السر<input id="suPass" type="password" minlength="8" autocomplete="new-password" dir="ltr" required></label>
+        <ul class="pw-rules" id="pwRules">
+          <li data-r="len">8 حروف أو أرقام على الأقل</li>
+          <li data-r="up">حرف إنجليزي كبير واحد على الأقل (A-Z)</li>
+          <li data-r="lo">حرف إنجليزي صغير واحد على الأقل (a-z)</li>
+          <li data-r="num">رقم واحد على الأقل (0-9)</li>
+          <li data-r="sym">رمز واحد على الأقل مثل ! @ # $ %</li>
+        </ul>
+        <p class="status">مثال: <b dir="ltr">Church@2025</b> (متستخدمش المثال ده، اعمل واحدة خاصة بيك).</p>
         <button class="btn" type="submit">إنشاء حساب</button>
         <span class="status" id="suMsg" role="status"></span>
       </form>
@@ -665,8 +678,15 @@ $('loginForm').addEventListener('submit', async e=>{
   } catch(err){ $('loginMsg').textContent = 'مقدرناش نتأكد. جرّب تاني.'; }
   renderAll();
 });
+const pwChecks = {len:v=>v.length>=8, up:v=>/[A-Z]/.test(v), lo:v=>/[a-z]/.test(v), num:v=>/[0-9]/.test(v), sym:v=>/[^A-Za-z0-9]/.test(v)};
+function pwOk(v){ return Object.values(pwChecks).every(f=>f(v)); }
+$('suPass').addEventListener('input', ()=>{
+  const v = $('suPass').value;
+  $('pwRules').querySelectorAll('li').forEach(li=>li.classList.toggle('ok', pwChecks[li.dataset.r](v)));
+});
 $('signupForm').addEventListener('submit', async e=>{
   e.preventDefault(); $('suMsg').textContent = '';
+  if (!pwOk($('suPass').value)) { $('suMsg').textContent = 'كلمة السر ضعيفة. كمّل الشروط اللي فوق لحد ما كلها تبقى ✓.'; return; }
   const {data, error} = await sb.auth.signUp({email:$('suEmail').value.trim(), password:$('suPass').value});
   if (error) { $('suMsg').textContent = /registered|exists/i.test(error.message) ? 'الإيميل ده عنده حساب بالفعل.' : 'مقدرناش نعمل الحساب: ' + error.message; return; }
   if (data.session) await sb.auth.signOut();
