@@ -399,7 +399,10 @@ function allowedServices(){
   if (me.role==='super') return SERVICES;
   if (me.role==='general') return SERVICES.filter(s=>s.id!=='dia');
   if (me.role==='diaconate') return SERVICES.filter(s=>s.id==='dia');
-  if (me.role==='service') return SERVICES.filter(s=>s.id===me.service);
+  if (me.role==='service'){
+    const mine = SV[me.service], joint = mine && mine.j;
+    return SERVICES.filter(s=>s.id===me.service || s.id===joint);
+  }
   return [];
 }
 function fillServiceSelect(){
@@ -765,9 +768,9 @@ async function syncPush(){
 async function start(){
   if (!sb){ $('loading').textContent = 'الموقع لسه محتاج إعداد: املا SUPABASE_URL و SUPABASE_ANON_KEY في ملف config.js.'; return; }
   try {
-    const {data, error} = await sb.from('services').select('id,name,hue,exclusive').order('sort');
+    const {data, error} = await sb.from('services').select('id,name,hue,exclusive,joint_id').order('sort');
     if (error) throw error;
-    setServices(data.map(s=>({id:s.id, name:s.name, h:s.hue, exclusive:s.exclusive})));
+    setServices(data.map(s=>({id:s.id, name:s.name, h:s.hue, exclusive:s.exclusive, j:s.joint_id})));
     try {
       const {data:ac} = await sb.from('activities').select('name').order('sort');
       if (ac && ac.length){ ACTIVITIES = ac.map(a=>a.name); setActivities(); }
