@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light dark">
-<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="icon" type="image/svg+xml" href="favicon.svg?v=2">
 <meta name="theme-color" media="(prefers-color-scheme: light)" content="#6e1220">
 <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#4a0f1a">
 <title>إدارة كاليندر الكنيسة</title>
@@ -42,13 +42,16 @@ h1,h2,h3{font-family:var(--font-display);margin:0;text-wrap:balance;line-height:
 h2{font-size:1.25rem;font-weight:700} h3{font-size:1rem}
 
 /* banner */
-.band{background:var(--brand);color:var(--brand-fg);margin-inline:-16px;padding:18px 16px 16px;text-align:center;border-bottom:3px double var(--gold)}
-.band-in{max-width:1180px;margin-inline:auto;display:grid;gap:4px;justify-items:center}
-.kicker{font-family:var(--font-display);font-size:1rem;color:var(--gold);letter-spacing:.02em}
-.cross{width:2.6rem;height:2.6rem;color:var(--gold)}
-.band h1{font-size:1.75rem;font-weight:700}
-.band .loc{font-family:var(--font-display);font-size:1.1rem;color:var(--gold)}
-.band p{margin:.4rem 0 0;max-width:60ch;font-size:.92rem;opacity:.92}
+.top{background:var(--brand);color:var(--brand-fg);margin-inline:-16px;border-bottom:3px double var(--gold)}
+.pray{font-family:var(--font-display);font-size:.85rem;color:var(--gold);text-align:center;padding:5px 16px 0;opacity:.9}
+.top-in{max-width:1180px;margin-inline:auto;padding:8px 16px 12px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:12px;min-width:0}
+.cross{width:2.5rem;height:2.5rem;color:var(--gold);flex:none}
+.brand-t h1{font-size:1.3rem;font-weight:700;color:var(--brand-fg)}
+.brand-t span{display:block;font-size:.82rem;color:var(--gold)}
+.top-act{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.top .btn{background:#ffffff1a;border-color:var(--gold);color:var(--brand-fg);text-decoration:none;font-size:.9rem}
+.top .btn:hover{background:#ffffff33}
 .strip{height:12px;margin-inline:-16px;background:var(--surface2) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='22' height='12'%3E%3Cpath d='M11 1.5v9M6.5 6h9' stroke='%23c9a24a' stroke-width='1.6'/%3E%3C/svg%3E") repeat-x center;border-bottom:1px solid var(--line)}
 
 .main{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(0,1fr);gap:20px;align-items:start}
@@ -84,7 +87,8 @@ button{font:inherit;color:inherit;cursor:pointer}
   .chips{flex-direction:row;flex-wrap:wrap;gap:3px}
   .chip{width:.6rem;height:.6rem;padding:0;border-radius:50%;font-size:0;background:hsl(var(--h) 60% 52%)}
   .more{display:none}
-  .band h1{font-size:1.35rem}
+  .brand-t h1{font-size:1.05rem}
+  .brand-t span{display:none}
 }
 
 .legend{display:flex;flex-wrap:wrap;gap:6px 10px;margin-top:14px;font-size:.8rem;color:var(--muted)}
@@ -167,12 +171,14 @@ button.dot{border:none;padding:0;cursor:pointer;width:1.6rem;height:1.6rem;borde
     <circle fill="currentColor" cx="24" cy="76" r="5"/><circle fill="currentColor" cx="76" cy="76" r="5"/>
   </symbol>
 </svg>
-<header class="band">
-  <div class="band-in">
-    <svg class="cross" aria-hidden="true"><use href="#cc"/></svg>
-    <h1>إدارة الكاليندر</h1>
-    <div class="loc">كنيسة السيدة العذراء والقديس أثناسيوس - دار السلام</div>
-    <a class="back" href="index.html">رجوع للكاليندر</a> <a class="back" href="approvals.html">طلبات الخميس</a>
+<header class="top">
+  <div class="pray">بسم الآب والابن والروح القدس، إله واحد. آمين</div>
+  <div class="top-in">
+    <div class="brand">
+      <svg class="cross" aria-hidden="true"><use href="#cc"/></svg>
+      <div class="brand-t"><h1>إدارة الكاليندر</h1><span>كنيسة السيدة العذراء والقديس أثناسيوس · دار السلام</span></div>
+    </div>
+    <div class="top-act"><a class="btn" href="index.html">رجوع للكاليندر</a><a class="btn" href="approvals.html">طلبات الخميس</a></div>
   </div>
 </header>
 <div class="strip" aria-hidden="true"></div>
@@ -332,8 +338,8 @@ async function loadUsers(){
   $('userList').innerHTML = (data||[]).map(u=>{
     const mine = u.id===myId;
     const badge = `<span class="badge ${u.role==='none'?'':'on'}">${esc(ROLE_NAME[u.role]||u.role)}</span>`;
-    if (mine) return `<div class="urow"><div class="line"><span class="grow" dir="ltr" style="text-align:right">${esc(u.email)}</span>${badge}<span class="meta">إنت</span></div></div>`;
-    return `<div class="urow" data-uid="${esc(u.id)}"><div class="line"><span class="grow" dir="ltr" style="text-align:right">${esc(u.email)}</span>${badge}</div>
+    if (mine) return `<div class="urow"><div class="line"><span class="grow" dir="ltr" style="text-align:right">${esc(u.email)}</span>${badge}${u.phone?`<span class="meta" dir="ltr">${esc(u.phone)}</span>`:''}<span class="meta">إنت</span></div></div>`;
+    return `<div class="urow" data-uid="${esc(u.id)}"><div class="line"><span class="grow" dir="ltr" style="text-align:right">${esc(u.email)}</span>${badge}${u.phone?`<a class="meta" dir="ltr" href="tel:${esc(u.phone)}">${esc(u.phone)}</a>`:''}</div>
       <div class="line">
         <select data-r aria-label="الدور">${ROLES.map(([v,l])=>`<option value="${v}" ${v===u.role?'selected':''}>${l}</option>`).join('')}</select>
         <select data-s aria-label="الخدمة" ${u.role==='service'?'':'hidden'}><option value="">اختار الخدمة…</option>${svOpts(u.service)}</select>
