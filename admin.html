@@ -362,12 +362,14 @@ async function loadUsers(){
   $('usersN').textContent = waiting; $('usersN').hidden = !waiting;
   $('userList').innerHTML = (data||[]).map(u=>{
     const mine = u.id===myId;
+    const reqSv = u.req_service ? (u.req_service==='general' ? 'الأمين العام' : ((svs||[]).find(x=>x.id===u.req_service)||{}).name) : '';
+    const reqTag = (u.role==='none' && reqSv) ? `<span class="meta">طالب: ${esc(reqSv)}</span>` : '';
     const badge = `<span class="badge ${u.role==='none'?'':'on'}">${esc(ROLE_NAME[u.role]||u.role)}</span>`;
     if (mine) return `<div class="urow"><div class="line"><span class="grow" dir="ltr" style="text-align:right">${esc(u.email)}</span>${badge}${u.phone?`<span class="meta" dir="ltr">${esc(u.phone)}</span>`:''}<span class="meta">إنت</span></div></div>`;
-    return `<div class="urow" data-uid="${esc(u.id)}"><div class="line"><span class="grow" dir="ltr" style="text-align:right">${esc(u.email)}</span>${badge}${u.phone?`<a class="meta" dir="ltr" href="tel:${esc(u.phone)}">${esc(u.phone)}</a>`:''}</div>
+    return `<div class="urow" data-uid="${esc(u.id)}"><div class="line"><span class="grow" dir="ltr" style="text-align:right">${esc(u.email)}</span>${badge}${reqTag}${u.phone?`<a class="meta" dir="ltr" href="tel:${esc(u.phone)}">${esc(u.phone)}</a>`:''}</div>
       <div class="line">
-        <select data-r aria-label="الدور">${ROLES.map(([v,l])=>`<option value="${v}" ${v===u.role?'selected':''}>${l}</option>`).join('')}</select>
-        <select data-s aria-label="الخدمة" ${u.role==='service'?'':'hidden'}><option value="">اختار الخدمة…</option>${svOpts(u.service)}</select>
+        <select data-r aria-label="الدور">${ROLES.map(([v,l])=>{ const pre = u.role==='none' && u.req_service ? (u.req_service==='general'?'general':'service') : u.role; return `<option value="${v}" ${v===pre?'selected':''}>${l}</option>`; }).join('')}</select>
+        <select data-s aria-label="الخدمة" ${(u.role==='service' || (u.role==='none' && u.req_service && u.req_service!=='general'))?'':'hidden'}><option value="">اختار الخدمة…</option>${svOpts(u.service || (u.req_service!=='general' ? u.req_service : ''))}</select>
         <input data-n value="${esc(u.name)}" maxlength="60" placeholder="الاسم" aria-label="الاسم">
         <button class="btn sm" data-saveu type="button">حفظ</button>
       </div></div>`;
