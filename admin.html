@@ -3,15 +3,22 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="color-scheme" content="light dark">
+<meta name="color-scheme" content="only light">
+<meta name="supported-color-schemes" content="light">
 <link rel="icon" type="image/svg+xml" href="favicon.svg?v=2">
-<meta name="theme-color" media="(prefers-color-scheme: light)" content="#6e1220">
-<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#4a0f1a">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="كاليندر الكنيسة">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#6e1220">
 <title>إدارة كاليندر الكنيسة</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap">
 <style>
 /* Layout: right-to-left. A burgundy and gold banner with a Coptic cross, then the month grid beside a side panel (selected day + booking form). */
 :root{
+  color-scheme:only light;
   --bg:#f3eee4; --surface:#fffdf8; --surface2:#f1eadb; --fg:#2b1b1d; --muted:#6b5a58; --line:#dccfb6;
   --brand:#6e1220; --brand-fg:#f7ecd2; --gold:#c9a24a; --gold-deep:#8f6b1c;
   --accent:#7b1626; --btn-bg:#7b1626; --btn-fg:#f7ecd2;
@@ -20,18 +27,6 @@
   --font-display:"Amiri","Noto Naskh Arabic","Traditional Arabic",serif;
   --font-body:"IBM Plex Sans Arabic","Segoe UI",Tahoma,sans-serif;
 }
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  --bg:#170d11; --surface:#2a1820; --surface2:#36212b; --fg:#f6ecd9; --muted:#c9b8a0; --line:#5d3a47;
-  --brand:#4a0f1a; --brand-fg:#f3dfae; --gold:#d6b25e; --gold-deep:#d6b25e;
-  --accent:#e0bb64; --btn-bg:#9a2236; --btn-fg:#fbf0d6;
-  --lock:#ff9aa7; --lock-bg:#3d1a25; --ok:#7bd6a4; --warn-bg:#3b2f10; --warn-fg:#f3d58a;
-  --cs:40%; --cl:24%; --ct:86%; color-scheme:dark}}
-:root[data-theme="dark"]{
-  --bg:#170d11; --surface:#2a1820; --surface2:#36212b; --fg:#f6ecd9; --muted:#c9b8a0; --line:#5d3a47;
-  --brand:#4a0f1a; --brand-fg:#f3dfae; --gold:#d6b25e; --gold-deep:#d6b25e;
-  --accent:#e0bb64; --btn-bg:#9a2236; --btn-fg:#fbf0d6;
-  --lock:#ff9aa7; --lock-bg:#3d1a25; --ok:#7bd6a4; --warn-bg:#3b2f10; --warn-fg:#f3d58a;
-  --cs:40%; --cl:24%; --ct:86%; color-scheme:dark}
 
 *{box-sizing:border-box}
 [hidden]{display:none!important}
@@ -157,6 +152,15 @@ footer input{width:11rem}
 .sw.on{outline:2px solid var(--fg);outline-offset:2px}
 button.dot{border:none;padding:0;cursor:pointer;width:1.6rem;height:1.6rem;border-radius:50%}
 .sw-field{flex:1 1 100%;display:grid;gap:4px}
+
+.tabs{display:flex;gap:6px;flex-wrap:wrap;border-bottom:2px solid var(--gold)}
+.tab{border:1px solid var(--line);border-bottom:none;border-radius:8px 8px 0 0;padding:8px 18px;background:var(--surface2);margin-bottom:-2px;font-weight:500}
+.tab[aria-selected="true"]{background:var(--brand);color:var(--brand-fg);border-color:var(--gold)}
+.tab .n{background:var(--gold);color:#2b1b1d;border-radius:99px;padding:0 7px;font-size:.75rem;margin-inline-start:6px;font-weight:700}
+.sect > h2{color:var(--accent);padding-bottom:8px;border-bottom:1px solid var(--line)}
+.sect > p{line-height:1.6}
+.sect + .sect{margin-top:0}
+.urow .line:first-child{padding-bottom:2px}
 .signup{margin-top:6px}
 .signup summary{cursor:pointer;color:var(--accent);margin-bottom:10px}
 .badge{font-size:.75rem;padding:0 8px;border-radius:99px;background:var(--surface);border:1px solid var(--line)}
@@ -206,8 +210,14 @@ button.dot{border:none;padding:0;cursor:pointer;width:1.6rem;height:1.6rem;borde
     </details>
   </section>
 
-  <div id="adminArea" hidden style="display:grid;gap:20px">
-    <section class="panel sect">
+  <div id="adminArea" hidden style="display:grid;gap:16px">
+    <nav class="tabs" id="tabs" role="tablist" aria-label="أقسام الإدارة">
+      <button class="tab" type="button" role="tab" data-t="users">المستخدمين<span class="n" id="usersN" hidden></span></button>
+      <button class="tab" type="button" role="tab" data-t="svc">الخدمات</button>
+      <button class="tab" type="button" role="tab" data-t="act">الأنشطة</button>
+      <button class="tab" type="button" role="tab" data-t="thu">الخميس والموسم</button>
+    </nav>
+    <section class="panel sect" data-tab="svc">
       <h2>الخدمات</h2>
       <p>غيّر الاسم أو اللون (اضغط على الدايرة الملونة) أو الترتيب، واضغط حفظ. خدمة الشماسية ثابتة لأن قواعد الحجز مربوطة بيها.</p>
       <div id="svcList" style="display:grid;gap:8px"></div>
@@ -220,7 +230,7 @@ button.dot{border:none;padding:0;cursor:pointer;width:1.6rem;height:1.6rem;borde
       <p>المعرّف كلمة إنجليزي صغيرة من غير مسافات، ومينفعش يتغيّر بعد كده.</p>
     </section>
 
-    <section class="panel sect">
+    <section class="panel sect" data-tab="act">
       <h2>أنواع الأنشطة</h2>
       <p>دي الاقتراحات اللي بتظهر في خانة "النشاط" وقت الحجز.</p>
       <div class="chips-row" id="actList"></div>
@@ -230,7 +240,7 @@ button.dot{border:none;padding:0;cursor:pointer;width:1.6rem;height:1.6rem;borde
       </form>
     </section>
 
-    <section class="panel sect">
+    <section class="panel sect" data-tab="thu">
       <h2>استثناءات خميس الشماسية</h2>
       <p>كل خميس محجوز لاجتماع الشماسية من 6 لـ 9، والحجز فيه بيحتاج موافقة أمين الشمامسة. في الفترات اللي هنا الحجز بيتأكد على طول من غير موافقة (مؤتمرات الصيف، الخلوات…).</p>
       <div id="exList" style="display:grid;gap:8px"></div>
@@ -242,7 +252,7 @@ button.dot{border:none;padding:0;cursor:pointer;width:1.6rem;height:1.6rem;borde
       </form>
     </section>
 
-    <section class="panel sect">
+    <section class="panel sect" data-tab="thu">
       <h2>موسم خدمة الشماسية</h2>
       <p>حدّد بداية العام ونهايته. اجتماع الشماسية الأسبوعي (الخميس 6 لـ 9) بيتحسب جوه الموسم بس. الخميسات اللي برة الموسم متاحة للحجز من غير موافقة. لو مفيش موسم متسجل، كل الخميسات بتتحسب.</p>
       <div id="seasonList" style="display:grid;gap:8px"></div>
@@ -254,7 +264,7 @@ button.dot{border:none;padding:0;cursor:pointer;width:1.6rem;height:1.6rem;borde
       </form>
     </section>
 
-    <section class="panel sect">
+    <section class="panel sect" data-tab="users">
       <h2>المستخدمين</h2>
       <p>اللي عمل حساب بيظهر هنا بحالة "في الانتظار". اختار له الدور واكتب اسمه واضغط حفظ.</p>
       <ul class="roles">
@@ -290,6 +300,19 @@ function fail(err, fallback){
   else if (err && (err.code==='42P01' || /schema cache|does not exist/i.test(m))) say('لازم تشغّل ملف update.sql في Supabase الأول.');
   else say(fallback || 'حصلت مشكلة، جرّب تاني.');
 }
+
+
+/* التبويبات */
+const TABS = ['users','svc','act','thu'];
+function showTab(t){
+  if (!TABS.includes(t)) t = 'users';
+  document.querySelectorAll('#adminArea [data-tab]').forEach(el=>{ el.hidden = el.dataset.tab!==t; });
+  document.querySelectorAll('#tabs .tab').forEach(b=>b.setAttribute('aria-selected', String(b.dataset.t===t)));
+  try { localStorage.setItem('church-admin-tab', t); } catch(e){}
+}
+$('tabs').addEventListener('click', e=>{ const b=e.target.closest('[data-t]'); if (b) showTab(b.dataset.t); });
+let savedTab = 'users'; try { savedTab = localStorage.getItem('church-admin-tab') || 'users'; } catch(e){}
+showTab(savedTab);
 
 async function loadAll(){
   const [sv, ac, ex] = await Promise.all([
@@ -335,6 +358,8 @@ async function loadUsers(){
   const [{data, error}, {data:svs}] = await Promise.all([sb.rpc('list_users'), sb.from('services').select('id,name').order('sort')]);
   if (error) { $('userList').innerHTML = '<span class="status">شغّل update.sql الأول.</span>'; return; }
   const svOpts = sel => (svs||[]).filter(x=>x.id!=='dia').map(x=>`<option value="${esc(x.id)}" ${x.id===sel?'selected':''}>${esc(x.name)}</option>`).join('');
+  const waiting = (data||[]).filter(u=>u.role==='none').length;
+  $('usersN').textContent = waiting; $('usersN').hidden = !waiting;
   $('userList').innerHTML = (data||[]).map(u=>{
     const mine = u.id===myId;
     const badge = `<span class="badge ${u.role==='none'?'':'on'}">${esc(ROLE_NAME[u.role]||u.role)}</span>`;
