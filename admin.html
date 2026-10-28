@@ -368,8 +368,8 @@ async function loadUsers(){
     if (mine) return `<div class="urow"><div class="line"><span class="grow" dir="ltr" style="text-align:right">${esc(u.email)}</span>${badge}${u.phone?`<span class="meta" dir="ltr">${esc(u.phone)}</span>`:''}<span class="meta">إنت</span></div></div>`;
     return `<div class="urow" data-uid="${esc(u.id)}"><div class="line"><span class="grow" dir="ltr" style="text-align:right">${esc(u.email)}</span>${badge}${reqTag}${u.phone?`<a class="meta" dir="ltr" href="tel:${esc(u.phone)}">${esc(u.phone)}</a>`:''}</div>
       <div class="line">
-        <select data-r aria-label="الدور">${ROLES.map(([v,l])=>{ const pre = u.role==='none' && u.req_service ? (u.req_service==='general'?'general':'service') : u.role; return `<option value="${v}" ${v===pre?'selected':''}>${l}</option>`; }).join('')}</select>
-        <select data-s aria-label="الخدمة" ${(u.role==='service' || (u.role==='none' && u.req_service && u.req_service!=='general'))?'':'hidden'}><option value="">اختار الخدمة…</option>${svOpts(u.service || (u.req_service!=='general' ? u.req_service : ''))}</select>
+        <select data-r aria-label="الدور">${ROLES.map(([v,l])=>{ const pre = u.role==='none' && u.req_service ? (u.req_service==='general'?'general':u.req_service==='dia'?'diaconate':'service') : u.role; return `<option value="${v}" ${v===pre?'selected':''}>${l}</option>`; }).join('')}</select>
+        <select data-s aria-label="الخدمة" ${(u.role==='service' || (u.role==='none' && u.req_service && u.req_service!=='general' && u.req_service!=='dia'))?'':'hidden'}><option value="">اختار الخدمة…</option>${svOpts(u.service || (u.req_service && u.req_service!=='general' && u.req_service!=='dia' ? u.req_service : ''))}</select>
         <input data-n value="${esc(u.name)}" maxlength="60" placeholder="الاسم" aria-label="الاسم">
         <button class="btn sm" data-saveu type="button">حفظ</button>
         <button class="btn sm danger" data-delu type="button">مسح الحساب</button>
