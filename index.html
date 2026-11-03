@@ -125,6 +125,11 @@ button{font:inherit;color:inherit;cursor:pointer}
   .usr-t{display:none}
 }
 
+.updbar{position:fixed;inset-inline:12px;bottom:12px;z-index:50;max-width:30rem;margin-inline:auto;display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--brand);color:var(--brand-fg);border:1px solid var(--gold);border-radius:10px;padding:10px 14px;box-shadow:0 6px 24px rgba(0,0,0,.25);font-size:.92rem}
+.updbar[hidden]{display:none}
+.updbar span{flex:1 1 12rem}
+.updbar .btn{background:var(--gold);color:#3a0a12;border-color:var(--gold);font-weight:700}
+.updbar .btn.ghost{background:none;color:inherit;font-weight:400}
 .cal-head{position:relative}
 .mtitle{font:inherit;color:inherit;background:none;border:none;padding:0;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
 .mtitle::after{content:"▾";font-size:.9rem;color:var(--gold-deep)}
@@ -271,6 +276,11 @@ footer input{width:11rem}
 </div>
 
 <div class="toast" id="toast" role="status" hidden></div>
+<div class="updbar" id="updBar" role="status" hidden>
+  <span>فيه نسخة جديدة من الأجندة.</span>
+  <button class="btn" id="updNow" type="button">حدّث الآن</button>
+  <button class="btn ghost" id="updLater" type="button">بعدين</button>
+</div>
 
 <dialog id="installDlg" class="dlg">
   <div class="dlg-h"><h2>نزّل البرنامج على تليفونك</h2><button class="x" type="button" data-close aria-label="إغلاق">×</button></div>
@@ -941,6 +951,22 @@ renderAll();
 start();
 setInterval(()=>{ if (loaded && !document.hidden && !saving && !editing) reloadBookings().then(renderAll).catch(()=>{}); }, 60000);
 document.addEventListener('visibilitychange', ()=>{ if (loaded && !document.hidden && !saving && !editing) reloadBookings().then(renderAll).catch(()=>{}); });
+
+/* رسالة التحديث: بنقارن رقم النسخة اللي شغالة برقم النسخة المنشورة (version.json) */
+const APP_VERSION = '2026-11-03-a';
+async function checkUpdate(){
+  try {
+    const r = await fetch('version.json?t=' + Date.now(), {cache:'no-store'});
+    if (!r.ok) return;
+    const v = (await r.json()).v;
+    if (v && v !== APP_VERSION) $('updBar').hidden = false;
+  } catch(e){}
+}
+$('updNow').onclick = ()=>{ location.reload(); };
+$('updLater').onclick = ()=>{ $('updBar').hidden = true; };
+setTimeout(checkUpdate, 4000);
+setInterval(checkUpdate, 5 * 60 * 1000);
+document.addEventListener('visibilitychange', ()=>{ if (!document.hidden) checkUpdate(); });
 </script>
 </body>
 </html>
