@@ -231,6 +231,8 @@ async function loadReqs(){
     return `<div class="card" data-id="${esc(r.id)}"><div class="ctop"><span class="when">${longDate(r.date)}</span>
       <span class="tag" style="--h:${s.hue}">${esc(s.name)}</span></div>
       <div>الحاجز: <b>${esc(r.name)}</b></div>
+      ${r.start&&r.end?`<div class="status" dir="rtl">الوقت: ${r.start} إلى ${r.end}</div>`:''}
+      ${r.rangeEnd?`<div class="status">جزء من حجز ممتد لحد ${longDate(r.rangeEnd)}</div>`:''}
       ${r.activity||r.place?`<div>${esc(r.activity)}${r.activity&&r.place?' · ':''}${esc(r.place)}</div>`:''}
       ${r.note?`<div class="status">${esc(r.note)}</div>`:''}
       <div class="btns"><input data-note placeholder="سبب الرفض (اختياري)" maxlength="150">
