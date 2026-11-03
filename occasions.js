@@ -24,6 +24,7 @@
     [1, 17, 'عيد الصليب المجيد', 'feast'],
     [3, 16, 'بداية صوم الميلاد', 'fast'],
     [4, 28, 'برمون الميلاد', 'fast'],
+    [5, 10, 'برمون الغطاس', 'fast'],
     [5, 11, 'عيد الظهور الإلهي (الغطاس)', 'feast'],
     [5, 21, 'نياحة السيدة العذراء', 'feast'],
     [6, 8, 'دخول السيد المسيح الهيكل', 'feast'],
@@ -101,10 +102,46 @@
     return out;
   }
 
+  /* ميلادي -> قبطي (عكس copticToGreg). السنة القبطية الكبيسة هي اللي باقي قسمتها على 4 يساوي 3 */
+  var MONTHS_C = ['توت', 'بابه', 'هاتور', 'كيهك', 'طوبة', 'أمشير', 'برمهات', 'برمودة', 'بشنس', 'بؤونة', 'أبيب', 'مسرى', 'النسيء'];
+  var jdnOf = function (d) { return Math.round(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / 86400000) + 2440588; };
+  function gregToCoptic(d) {
+    var t = jdnOf(d) - 1824665, y = Math.floor(t / 366);
+    while (365 * (y + 1) + Math.floor((y + 1) / 4) <= t) y++;
+    var r = t - (365 * y + Math.floor(y / 4));
+    return { y: y, m: Math.floor(r / 30) + 1, d: (r % 30) + 1 };
+  }
+
+  /* الفترات الكنسية. صيام الأربعاء والجمعة بيتلغي في الخماسين وفي فترة الميلاد لحد الغطاس */
+  var SEASONS = { nineveh: 'صوم يونان', lent: 'الصوم الكبير', holy: 'أسبوع الآلام', fifty: 'الخماسين المقدسة',
+                  nativity: 'صوم الميلاد', apostles: 'صوم الرسل', virgin: 'صوم السيدة العذراء' };
+  function copticInfo(k) {
+    var d = new Date(+k.slice(0, 4), +k.slice(5, 7) - 1, +k.slice(8, 10));
+    var c = gregToCoptic(d), off = jdnOf(d) - jdnOf(copticEaster(d.getFullYear()));
+    var season = '', fasting = false, name = '';
+    if (off >= -69 && off <= -67) { season = 'nineveh'; fasting = true; }
+    else if (off >= -55 && off <= -7) { season = 'lent'; fasting = true; }
+    else if (off >= -6 && off <= -1) { season = 'holy'; fasting = true; }
+    else if (off >= 0 && off <= 49) season = 'fifty';
+    else if (off >= 50 && d <= copticToGreg(d.getFullYear() - 284, 11, 4)) { season = 'apostles'; fasting = true; }
+    else if (c.m === 12 && c.d <= 15) { season = 'virgin'; fasting = true; }
+    else if ((c.m === 3 && c.d >= 16) || (c.m === 4 && c.d <= 28)) { season = 'nativity'; fasting = true; }
+    if (fasting) name = SEASONS[season];
+    else if (c.m === 5 && c.d === 10) { name = 'برمون الغطاس'; fasting = true; }
+    else {
+      var dow = d.getDay(), noWeekly = season === 'fifty' || (c.m === 4 && c.d >= 29) || (c.m === 5 && c.d <= 9);
+      if (!noWeekly && dow === 3) name = 'صيام الأربعاء';
+      else if (!noWeekly && dow === 5) name = 'صيام الجمعة';
+    }
+    return { date: c.d + ' ' + MONTHS_C[c.m - 1] + ' ' + c.y, day: c.d, month: MONTHS_C[c.m - 1],
+             season: season, seasonName: SEASONS[season] || '', fast: name, fasting: fasting };
+  }
+  window.copticInfo = copticInfo;
+
   window.occasionsOn = function (k) {
     var y = parseInt(k.slice(0, 4), 10);
     if (!cache[y]) cache[y] = build(y);
     return cache[y][k] || [];
   };
-  window.occasionsDebug = { copticToGreg: copticToGreg, copticEaster: copticEaster, build: build };
+  window.occasionsDebug = { copticToGreg: copticToGreg, copticEaster: copticEaster, gregToCoptic: gregToCoptic, build: build };
 })();
