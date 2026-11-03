@@ -134,6 +134,9 @@ button{font:inherit;color:inherit;cursor:pointer}
 .dayinfo li{display:flex;gap:10px;align-items:flex-start;justify-content:space-between;border:1px solid var(--line);border-radius:6px;padding:8px 10px;background:var(--surface2)}
 .dayinfo .who{color:var(--muted);font-size:.85rem}
 .dayinfo .note{font-size:.84rem;margin-top:2px}
+.time{display:inline-block;font-size:.76rem;padding:0 8px;border-radius:99px;border:1px solid var(--line);color:var(--fg);margin-inline-start:4px;direction:ltr}
+.chk{display:flex;align-items:center;gap:8px;font-size:.88rem}
+.chk input{width:auto}
 .tag{display:inline-block;font-size:.76rem;padding:0 8px;border-radius:99px;background:hsl(var(--h) var(--cs) var(--cl));color:hsl(var(--h) 35% var(--ct))}
 .acts{display:flex;flex-direction:column;align-items:flex-end;gap:2px;flex:none}
 .lnk{border:none;background:none;color:var(--accent);font-size:.82rem;padding:2px 4px;text-decoration:underline}
@@ -326,6 +329,15 @@ footer input{width:11rem}
         <label>التاريخ<input id="fDate" type="date" required></label>
         <label>الخدمة<select id="fService" required></select></label>
       </div>
+      <div class="row2" id="rangeRow">
+        <label>لحد تاريخ <small>(اختياري: مؤتمر أو رحلة أكتر من يوم)</small><input id="fEndDate" type="date"></label>
+      </div>
+      <div class="row2">
+        <label>من الساعة <small>(اختياري)</small><input id="fStart" type="time"></label>
+        <label>لحد الساعة <small>(اختياري)</small><input id="fEnd" type="time"></label>
+      </div>
+      <p class="status">سيب الساعات فاضية لو الحجز اليوم كله.</p>
+      <label class="chk" id="allRow" hidden><input id="fAll" type="checkbox" checked> طبّق التعديل على كل أيام الحجز</label>
       <div class="row2">
         <label>النشاط<input id="fAct" type="text" list="acts" maxlength="40" placeholder="رحلة، كورس، خلوة…"></label>
         <label>المكان<input id="fPlace" type="text" maxlength="80" placeholder="مثلاً: دير الأنبا برسوم"></label>
@@ -440,19 +452,35 @@ const isException = k => exceptions.some(x=>k>=x.from && k<=x.to);
 const inSeason = k => !seasons.length || seasons.some(x=>k>=x.from && k<=x.to);
 const isThu = k => parse(k).getDay()===4;
 const weeklyOn = k => isThu(k) && inSeason(k) && !isException(k);
+/* الوقت: بيجي من قاعدة البيانات "HH:MM" أو فاضي = اليوم كله */
+const toMin = t => { const [h,m] = t.split(':').map(Number); return h*60+m; };
+function overlaps(as, ae, bs, be){
+  return (as ? toMin(as) : 0) < (be ? toMin(be) : 1440) && (bs ? toMin(bs) : 0) < (ae ? toMin(ae) : 1440);
+}
+const fmtTime = t => { const [h,m] = t.split(':').map(Number); return `${nf.format(h%12||12)}:${pad(m)} ${h<12?'ص':'م'}`; };
+const timeTxt = b => b.start && b.end ? `${fmtTime(b.start)} - ${fmtTime(b.end)}` : '';
+function rangeTxt(b){
+  if (!b.group) return '';
+  const ds = bookings.filter(x=>x.group===b.group).map(x=>x.date).sort();
+  return ds.length>1 || b.rangeEnd ? `حجز ممتد من ${shortDate(ds[0])} لحد ${shortDate(b.rangeEnd||ds[ds.length-1])}` : '';
+}
+/* اجتماع الشماسية الأسبوعي بيفضل ثابت كل خميس. الحجوزات اللي بتتقاطع مع 6 لـ 9 بتتكتب جواه كخدمات غايبة. */
 function dayList(k){
   const all = byDate[k]||[];
   const out = [];
-  if (weeklyOn(k) && !all.some(b=>b.status!=='pending'))
-    out.push({id:'w-'+k, date:k, service:'dia', name:'اجتماع الشماسية الأسبوعي', activity:'اجتماع أسبوعي', place:'', note:'كل خميس من 6 لـ 9 مساءً', notifyDate:'', virtual:true});
+  if (weeklyOn(k) && !all.some(b=>b.service==='dia' && b.status!=='pending')){
+    const away = all.filter(b=>b.status!=='pending' && overlaps(b.start,b.end,'18:00','21:00')).map(b=>sname(b.service));
+    out.push({id:'w-'+k, date:k, service:'dia', name:'اجتماع الشماسية الأسبوعي', activity:'اجتماع أسبوعي', place:'', note:'كل خميس من 6 لـ 9 مساءً', away:[...new Set(away)], notifyDate:'', virtual:true, start:'18:00', end:'21:00'});
+  }
   return out.concat(all);
 }
 
 /* قواعد الحجز. نفس القواعد بتتراجع تاني في قاعدة البيانات وقت الحفظ. */
-function evaluate(date, service, excludeId){
+function evaluate(date, service, excludeId, start, end){
   if (!date || !service) return null;
   if (date < todayIso()) return {kind:'past'};
-  const all = (byDate[date] || []).filter(b=>b.id!==excludeId);
+  const day = (byDate[date] || []).filter(b=>b.id!==excludeId);
+  const all = day.filter(b=>overlaps(b.start,b.end,start,end));
   const conf = all.filter(b=>b.status!=='pending');
   const dia = conf.find(b=>b.service==='dia');
   if (dia) return {kind:'locked', who:dia};
@@ -460,27 +488,63 @@ function evaluate(date, service, excludeId){
   const dup = all.find(b=>b.service===service);
   if (dup) return {kind:'dup', who:dup};
   let approval = null;
-  if (weeklyOn(date) && !conf.length && service!=='dia' && !['diaconate','super'].includes(me.role)) approval = 'diaconate';
+  if (weeklyOn(date) && service!=='dia' && !['diaconate','super'].includes(me.role) && overlaps(start,end,'18:00','21:00')) approval = 'diaconate';
   else if (settings.require_general_approval && me.role==='service') approval = 'general';
-  return {kind:'ok', others:all, approval};
+  return {kind:'ok', others:day, approval};
+}
+/* نتيجة الفورم كلها: يوم واحد أو مدى أيام */
+function formState(){
+  const date = $('fDate').value, service = $('fService').value;
+  const start = $('fStart').value || null, end = $('fEnd').value || null;
+  let endDate = editing ? '' : $('fEndDate').value;
+  if (!date || !service) return null;
+  if ((start && !end) || (!start && end)) return {kind:'bad', msg:'اكتب ساعة البداية والنهاية مع بعض، أو سيبهم فاضيين لو اليوم كله.'};
+  if (start && end && toMin(end) <= toMin(start)) return {kind:'bad', msg:'ساعة النهاية لازم تكون بعد ساعة البداية.'};
+  if (endDate && endDate < date) return {kind:'bad', msg:'تاريخ النهاية لازم يكون بعد تاريخ البداية.'};
+  if (endDate === date) endDate = '';
+  const days = [];
+  if (endDate){
+    const a = parse(date), z = parse(endDate), n = Math.round((z-a)/864e5);
+    if (n > 13) return {kind:'bad', msg:'أقصى مدة للحجز 14 يوم.'};
+    for (let i=0;i<=n;i++){ const d = new Date(a); d.setDate(a.getDate()+i); days.push(iso(d)); }
+  } else days.push(date);
+  const res = days.map(k=>({k, r:evaluate(k, service, editing?.id, start, end)}));
+  return {kind:'range', multi:days.length>1, start, end, endDate, res};
 }
 const who = b => `<b>${esc(b.name)}</b>`;
 const sname = id => esc(SV[id]?.name||'');
 
 function renderCheck(){
-  const r = evaluate($('fDate').value, $('fService').value, editing?.id);
-  let blocked = false, html = '';
-  if (!r) { html = ''; }
-  else if (r.kind==='past') { blocked = true; html = `<div class="msg block">التاريخ ده عدى. اختار النهارده أو يوم جاي.</div>`; }
-  else if (r.kind==='locked') { blocked = true; html = `<div class="msg block">تنبيه: اليوم ده محجوز لخدمة الشماسية (${who(r.who)}) ومينفعش أي خدمة تانية تحجز فيه.</div>`; }
-  else if (r.kind==='needsFree') { blocked = true; html = `<div class="msg block">الشماسية محتاجة يوم فاضي بالكامل، واليوم ده فيه حجوزات: ${r.list.map(b=>`${sname(b.service)} (${who(b)})`).join('، ')}.</div>`; }
-  else if (r.kind==='dup') { blocked = true; html = `<div class="msg block">${sname(r.who.service)} حاجزة اليوم ده ${r.who.status==='pending'?'(طلبها بانتظار الموافقة)':'بالفعل'}. الحاجز: ${who(r.who)}.</div>`; }
-  else if (r.approval==='diaconate') { html = `<div class="msg warn">يوم الخميس محجوز لاجتماع الشماسية الأسبوعي من 6 لـ 9. طلبك هيتبعت لأمين خدمة الشماسية، وهو اللي يقبل أو يرفض. هتشوف الرد في "طلباتي".</div>`; }
-  else if (r.approval==='general') { html = `<div class="msg warn">الحجز ده محتاج موافقة الأمين العام. هتشوف الرد في "طلباتي".</div>`; }
-  else if (r.others.length) { html = `<div class="msg warn">تنبيه: فيه خدمات تانية حاجزة اليوم ده، ومفيش تعارض معاها: ${r.others.map(b=>`${sname(b.service)} (${who(b)})`).join('، ')}.</div>`; }
-  else { html = `<div class="msg good">اليوم فاضي، تقدر تحجز.</div>`; }
+  const f = formState();
+  $('rangeRow').hidden = !!editing;
+  $('allRow').hidden = !(editing && editing.group);
+  let blocked = false, html = '', approval = null;
+  if (!f) html = '';
+  else if (f.kind==='bad') { blocked = true; html = `<div class="msg block">${f.msg}</div>`; }
+  else {
+    const pre = k => f.multi ? `<b>${shortDate(k)}</b>: ` : '';
+    const when = f.start ? 'الوقت' : 'اليوم';
+    const bad = f.res.find(x=>x.r.kind!=='ok');
+    if (bad){
+      blocked = true; const r = bad.r;
+      if (r.kind==='past') html = `<div class="msg block">التاريخ ده عدى. اختار النهارده أو يوم جاي.</div>`;
+      else if (r.kind==='locked') html = `<div class="msg block">${pre(bad.k)}تنبيه: ${when} ده محجوز لخدمة الشماسية (${who(r.who)}) ومينفعش أي خدمة تانية تحجز فيه.</div>`;
+      else if (r.kind==='needsFree') html = `<div class="msg block">${pre(bad.k)}الشماسية محتاجة ${when} فاضي بالكامل، وفيه حجوزات: ${r.list.map(b=>`${sname(b.service)} (${who(b)})`).join('، ')}.</div>`;
+      else if (r.kind==='dup') html = `<div class="msg block">${pre(bad.k)}${sname(r.who.service)} حاجزة ${when} ده ${r.who.status==='pending'?'(طلبها بانتظار الموافقة)':'بالفعل'}. الحاجز: ${who(r.who)}.</div>`;
+    } else {
+      const dia = f.res.filter(x=>x.r.approval==='diaconate'), gen = f.res.filter(x=>x.r.approval==='general');
+      approval = dia.length ? 'diaconate' : gen.length ? 'general' : null;
+      if (dia.length) html = `<div class="msg warn">${f.multi?`الخميس ${dia.map(x=>shortDate(x.k)).join('، ')} فيه`:'يوم الخميس فيه'} اجتماع الشماسية الأسبوعي (6 لـ 9 مساءً) وهيفضل زي ما هو. ${f.multi?'طلب الخميس':'طلبك'} هيتبعت لأمين خدمة الشماسية يقبله أو يرفضه${f.multi?'، وباقي الأيام هتتسجل على طول':''}. لو حجزك بيخلص قبل 6 مساءً مش محتاج موافقة.</div>`;
+      else if (gen.length) html = `<div class="msg warn">الحجز ده محتاج موافقة الأمين العام. هتشوف الرد في "طلباتي".</div>`;
+      else {
+        const others = f.res.flatMap(x=>x.r.others);
+        if (others.length && !f.multi) html = `<div class="msg warn">تنبيه: فيه خدمات تانية حاجزة اليوم ده، ومفيش تعارض معاها: ${others.map(b=>`${sname(b.service)} (${who(b)})${timeTxt(b)?' '+timeTxt(b):''}`).join('، ')}.</div>`;
+        else html = `<div class="msg good">${f.multi?`الأيام فاضية (${nf.format(f.res.length)} يوم)، تقدر تحجز.`:'اليوم فاضي، تقدر تحجز.'}</div>`;
+      }
+    }
+  }
   $('check').innerHTML = html;
-  $('submit').textContent = (r && r.approval) ? 'ابعت الطلب' : (editing ? 'احفظ التعديل' : 'احجز الميعاد');
+  $('submit').textContent = approval ? 'ابعت الطلب' : (editing ? 'احفظ التعديل' : 'احجز الميعاد');
   $('submit').disabled = blocked || !loaded || saving;
 }
 
@@ -513,13 +577,16 @@ function renderDay(){
   const past = sel < todayIso();
   $('dayBody').innerHTML = '<ul>' + list.map(b=>{
     const edit = (!b.virtual && b.canEdit && !past) ? `<button class="lnk" type="button" data-edit="${esc(b.id)}">تعديل</button>` : '';
-    const cancel = (!b.virtual && b.canCancel) ? `<button class="lnk danger" type="button" data-cancel="${esc(b.id)}">${pendingCancel===b.id?'اضغط تاني للتأكيد':'إلغاء الحجز'}</button>` : '';
+    const cbtn = (all,label) => `<button class="lnk danger" type="button" data-cancel="${esc(b.id)}" data-all="${all?1:0}">${pendingCancel===b.id+(all?':all':'')?'اضغط تاني للتأكيد':label}</button>`;
+    const cancel = (!b.virtual && b.canCancel) ? (b.group ? cbtn(false,'إلغاء اليوم ده')+cbtn(true,'إلغاء كل الأيام') : cbtn(false,'إلغاء الحجز')) : '';
     const needsTxt = b.needs==='general' ? 'بانتظار موافقة الأمين العام' : 'بانتظار موافقة أمين خدمة الشماسية';
-    return `<li><div><span class="tag" style="--h:${SV[b.service]?.h??0}">${sname(b.service)||'خدمة'}</span>
+    return `<li><div><span class="tag" style="--h:${SV[b.service]?.h??0}">${sname(b.service)||'خدمة'}</span>${timeTxt(b)?`<span class="time">${timeTxt(b)}</span>`:''}
       ${b.activity||b.place?`<div class="note"><b>${esc(b.activity)}</b>${b.activity&&b.place?' · ':''}${esc(b.place)}</div>`:''}
       <div class="who">الحاجز: ${esc(b.name)}${b.phone?` · <a class="tel" href="tel:${esc(b.phone)}">${esc(b.phone)}</a>`:''}</div>
       ${b.status==='pending'?`<div class="pendtag">${needsTxt}</div>`:''}
       ${b.note?`<div class="note">${esc(b.note)}</div>`:''}
+      ${rangeTxt(b)?`<div class="who">${rangeTxt(b)}</div>`:''}
+      ${b.virtual&&b.away&&b.away.length?`<div class="note">الاجتماع قائم، والخدمات دي مش هتحضر فيه: <b>${b.away.join('، ')}</b></div>`:''}
       ${b.notifyDate?`<div class="who">تاريخ الإخطار: ${shortDate(b.notifyDate)}</div>`:''}</div>
       <div class="acts">${edit}${cancel}</div></li>`;
   }).join('') + '</ul>';
@@ -563,13 +630,14 @@ function openForm(){
   if (!$('formDlg').open) $('formDlg').showModal();
 }
 function closeForm(){ if ($('formDlg').open) $('formDlg').close(); }
-function resetForm(){ editing = null; $('fNote').value=''; $('fAct').value=''; $('fPlace').value=''; }
+function resetForm(){ editing = null; $('fNote').value=''; $('fAct').value=''; $('fPlace').value=''; $('fEndDate').value=''; $('fStart').value=''; $('fEnd').value=''; $('fAll').checked=true; }
 
 function startEdit(id){
   const b = bookings.find(x=>x.id===id); if(!b) return;
   editing = b;
   $('fDate').value = b.date; fillServiceSelect(); $('fService').value = b.service;
   $('fAct').value = b.activity; $('fPlace').value = b.place; $('fNote').value = b.note;
+  $('fStart').value = b.start || ''; $('fEnd').value = b.end || ''; $('fEndDate').value = ''; $('fAll').checked = true;
   openForm();
 }
 
@@ -620,6 +688,8 @@ $('next').onclick = ()=>{ view = new Date(view.getFullYear(), view.getMonth()+1,
 $('today').onclick = ()=>{ view = new Date(); view.setDate(1); select(todayIso(), true); };
 $('fDate').addEventListener('change', ()=>{ if($('fDate').value) select($('fDate').value, true); });
 $('fService').addEventListener('change', renderCheck);
+['fEndDate','fStart','fEnd'].forEach(id=>$(id).addEventListener('input', renderCheck));
+$('fDate').addEventListener('input', ()=>{ $('fEndDate').min = $('fDate').value; if ($('fEndDate').value && $('fEndDate').value < $('fDate').value) $('fEndDate').value = ''; });
 /* النوافذ المنبثقة */
 document.querySelectorAll('dialog.dlg').forEach(d=>{
   d.addEventListener('click', e=>{ if (e.target===d || e.target.closest('[data-close]')) d.close(); });
@@ -658,12 +728,12 @@ $('mDir').onclick = async ()=>{
 $('dayBody').addEventListener('click', async e=>{
   const ed = e.target.closest('[data-edit]'); if (ed) { startEdit(ed.dataset.edit); return; }
   const c = e.target.closest('[data-cancel]'); if (!c) return;
-  const id = c.dataset.cancel;
-  if (pendingCancel!==id){ pendingCancel = id; renderDay(); setTimeout(()=>{ if(pendingCancel===id){ pendingCancel=null; renderDay(); } }, 4000); return; }
+  const id = c.dataset.cancel, all = c.dataset.all==='1', key = id + (all?':all':'');
+  if (pendingCancel!==key){ pendingCancel = key; renderDay(); setTimeout(()=>{ if(pendingCancel===key){ pendingCancel=null; renderDay(); } }, 4000); return; }
   pendingCancel = null;
   try {
-    const r = await rpc('cancel_booking', {p_id:id});
-    await reloadBookings(); say(r.ok ? 'اتلغى الحجز.' : r.error);
+    const r = await rpc('cancel_booking', {p_id:id, p_all:all});
+    await reloadBookings(); say(r.ok ? (all ? 'اتلغت كل أيام الحجز.' : 'اتلغى الحجز.') : r.error);
     if (r.ok && editing && editing.id===id) resetForm();
   } catch(err){ say('مقدرناش نلغي الحجز، جرّب تاني.'); }
   renderAll();
@@ -674,19 +744,20 @@ $('form').addEventListener('submit', async e=>{
   if (!loaded || saving) return;
   const service = $('fService').value, date = $('fDate').value;
   if (!date || !service) { say('كمّل التاريخ والخدمة.'); return; }
-  if (evaluate(date, service, editing?.id).kind!=='ok') { renderCheck(); return; }
+  const fs = formState();
+  if (!fs || fs.kind!=='range' || fs.res.some(x=>x.r.kind!=='ok')) { renderCheck(); return; }
   saving = true; $('submit').disabled = true; say('جاري الحفظ…');
-  const args = {p_date:date, p_service:service, p_activity:$('fAct').value.trim(), p_place:$('fPlace').value.trim(), p_note:$('fNote').value.trim()};
+  const args = {p_date:date, p_service:service, p_activity:$('fAct').value.trim(), p_place:$('fPlace').value.trim(), p_note:$('fNote').value.trim(), p_start:fs.start, p_end:fs.end};
   try {
     if (editing){
-      const r = await rpc('update_booking', {p_id:editing.id, ...args});
+      const r = await rpc('update_booking', {p_id:editing.id, ...args, p_all: !!editing.group && $('fAll').checked});
       await reloadBookings();
       if (r.ok){ resetForm(); sel = date; view = parse(date); view.setDate(1); closeForm(); say(r.status==='pending' ? 'اتعدّل الحجز وبانتظار الموافقة.' : 'اتعدّل الحجز.'); }
       else say(r.error);
     } else {
-      const r = await rpc('add_booking', args);
+      const r = await rpc('add_booking', {...args, p_end_date: fs.endDate || null});
       await reloadBookings();
-      if (r.ok){ resetForm(); sel = date; view = parse(date); view.setDate(1); closeForm(); say(r.status==='pending' ? 'اتبعت الطلب، وبانتظار الموافقة. هتلاقيه في "طلباتي".' : 'اتسجّل الحجز.'); }
+      if (r.ok){ resetForm(); sel = date; view = parse(date); view.setDate(1); closeForm(); say(r.status==='pending' ? (r.days>1 && r.pending<r.days ? 'اتسجّل الحجز. وأيام الخميس بانتظار موافقة الشماسية، هتلاقيها في "طلباتي".' : 'اتبعت الطلب، وبانتظار الموافقة. هتلاقيه في "طلباتي".') : (r.days>1 ? `اتسجّل الحجز لـ ${nf.format(r.days)} أيام.` : 'اتسجّل الحجز.')); }
       else say(r.error);
     }
   } catch(err){ say('حصلت مشكلة وقت الحفظ. اتأكد من النت وجرّب تاني.'); }
