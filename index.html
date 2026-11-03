@@ -141,6 +141,10 @@ button{font:inherit;color:inherit;cursor:pointer}
 .ocn.feast,.num.feast{color:var(--gold-deep)}
 .ocn.fast{color:#6b4c8a}
 .day.today .num.hol,.day.today .num.feast{color:var(--brand-fg)}
+.cdn{position:absolute;top:5px;inset-inline-end:5px;font-size:.62rem;line-height:1;color:var(--muted);white-space:nowrap}
+.day.fastd{box-shadow:inset 0 -3px 0 #c9b6dc}
+.day.holyw{box-shadow:inset 0 -3px 0 #5a3a78}
+.cdate{color:var(--muted);font-size:.85rem;margin-bottom:8px}
 .occs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
 .occ{font-size:.82rem;padding:2px 10px;border-radius:99px;border:1px solid currentColor}
 .occ.hol{color:#a4262c;background:#fbeaea}
@@ -175,6 +179,8 @@ textarea{resize:vertical;min-height:3.2rem}
 .msg.block{background:var(--lock-bg);color:var(--lock);border:1px solid var(--lock)}
 .msg.warn{background:var(--warn-bg);color:var(--warn-fg)}
 .msg.good{background:var(--surface2);color:var(--ok)}
+.msg.info{background:var(--surface2);color:var(--muted);margin-top:6px}
+.msg+.msg{margin-top:6px}
 .status{font-size:.82rem;color:var(--muted)}
 .editbar{display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--warn-bg);color:var(--warn-fg);border-radius:6px;padding:8px 12px;font-size:.88rem}
 .codebox{border:2px solid var(--gold);border-radius:6px;padding:12px;background:var(--surface2);display:grid;gap:6px}
@@ -411,7 +417,7 @@ footer input{width:11rem}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="config.js"></script>
 <script src="pw.js"></script>
-<script src="occasions.js"></script>
+<script src="occasions.js?v=2"></script>
 <script>
 let ACTIVITIES = ['رحلة','كورس','خلوة','معسكر','مؤتمر','حفلة','مسرح','يوم روحي','يوم رياضي','كرنفال','قافلة'];
 const MONTHS = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
@@ -547,6 +553,16 @@ function formState(){
 const who = b => `<b>${esc(b.name)}</b>`;
 const sname = id => esc(SV[id]?.name||'');
 
+/* تنبيه بالفترة الكنسية للأيام المحجوزة. مجرد معلومة، مش بيمنع الحجز */
+function seasonNote(days){
+  const infos = days.map(copticInfo);
+  if (infos.some(c=>c.season==='holy')) return `<div class="msg warn">تنبيه: ${days.length>1?'من الأيام دي في':'اليوم ده في'} أسبوع الآلام، والكنيسة بتبقى في صلوات البصخة. اتأكد إن النشاط مناسب قبل ما تحجز.</div>`;
+  const names = [...new Set(infos.filter(c=>c.fasting).map(c=>c.fast))];
+  if (names.length) return `<div class="msg info">${days.length>1?'الأيام دي فيها':'اليوم ده'}: ${names.join('، ')}. لو النشاط فيه أكل يبقى صيامي.</div>`;
+  const weekly = [...new Set(infos.filter(c=>c.fast).map(c=>c.fast))];
+  return weekly.length && days.length===1 ? `<div class="msg info">اليوم ده ${weekly[0]}. لو النشاط فيه أكل يبقى صيامي.</div>` : '';
+}
+
 function renderCheck(){
   const f = formState();
   $('rangeRow').hidden = !!editing;
@@ -576,6 +592,7 @@ function renderCheck(){
       }
     }
   }
+  if (f && f.res && !blocked) html += seasonNote(f.res.map(x=>x.k));
   $('check').innerHTML = html;
   $('submit').textContent = approval ? 'ابعت الطلب' : (editing ? 'احفظ التعديل' : 'احجز الميعاد');
   $('submit').disabled = blocked || !loaded || saving;
@@ -593,12 +610,14 @@ function renderCal(){
     const d = new Date(start); d.setDate(start.getDate()+i);
     if (i>=35 && d.getMonth()!==view.getMonth()) break;
     const k = iso(d), list = dayList(k), locked = list.some(b=>b.service==='dia' && b.status!=='pending');
-    const cls = ['day', d.getMonth()!==view.getMonth()?'out':'', k<t?'past':'', k===t?'today':'', k===sel?'sel':'', locked?'locked':''].join(' ');
+    const ci = copticInfo(k);
+    const cls = ['day', d.getMonth()!==view.getMonth()?'out':'', k<t?'past':'', k===t?'today':'', k===sel?'sel':'', locked?'locked':'', ci.season==='holy'?'holyw':ci.fasting?'fastd':''].join(' ');
     const shown = list.slice(0,3);
     const oc = occasionsOn(k), ot = oc.some(o=>o.t==='hol') ? 'hol' : oc.some(o=>o.t==='feast') ? 'feast' : oc.length ? 'fast' : '';
-    const label = `${longDate(k)}${oc.length?`، ${oc.map(o=>o.n).join('، ')}`:''}${list.length?`، ${nf.format(list.length)} حجز`:''}${locked?'، يوم الشماسية':''}`;
+    const label = `${longDate(k)}، ${ci.date}${ci.fast?`، ${ci.fast}`:''}${oc.length?`، ${oc.map(o=>o.n).join('، ')}`:''}${list.length?`، ${nf.format(list.length)} حجز`:''}${locked?'، يوم الشماسية':''}`;
     html += `<button type="button" class="${cls}" data-d="${k}" aria-label="${label}">
       <span class="num ${ot==='fast'?'':ot}">${nf.format(d.getDate())}</span>
+      <span class="cdn" aria-hidden="true">${ci.day===1?ci.month+' ':''}${ci.day}</span>
       ${oc.length?`<span class="ocn ${ot}" title="${esc(oc.map(o=>o.n).join('، '))}">${esc(oc[0].n)}</span>`:''}
       <span class="chips">${shown.map(b=>`<span class="chip${b.status==='pending'?' pend':''}" style="--h:${SV[b.service]?.h??0}">${sname(b.service)}</span>`).join('')}${list.length>3?`<span class="more">+${nf.format(list.length-3)}</span>`:''}</span>
     </button>`;
@@ -609,7 +628,9 @@ function renderCal(){
 function renderDay(){
   $('dayTitle').textContent = longDate(sel);
   const list = dayList(sel);
-  const occHtml = occasionsOn(sel).length ? '<div class="occs">' + occasionsOn(sel).map(o=>`<span class="occ ${o.t}">${esc(o.n)}${o.approx?' (تقريبي)':''}</span>`).join('') + '</div>' : '';
+  const cs = copticInfo(sel);
+  const cdate = `<div class="cdate">${cs.date}${cs.fast?` · ${cs.fast}`:''}${cs.season==='fifty'?` · ${cs.seasonName}`:''}</div>`;
+  const occHtml = cdate + (occasionsOn(sel).length ?'<div class="occs">' + occasionsOn(sel).map(o=>`<span class="occ ${o.t}">${esc(o.n)}${o.approx?' (تقريبي)':''}</span>`).join('') + '</div>' : '');
   if (!list.length){ $('dayBody').innerHTML = occHtml + `<p class="empty free">${loaded?'مفيش حجوزات في اليوم ده.':''}</p>`; return; }
   const past = sel < todayIso();
   $('dayBody').innerHTML = occHtml + '<ul>' + list.map(b=>{
@@ -953,7 +974,7 @@ setInterval(()=>{ if (loaded && !document.hidden && !saving && !editing) reloadB
 document.addEventListener('visibilitychange', ()=>{ if (loaded && !document.hidden && !saving && !editing) reloadBookings().then(renderAll).catch(()=>{}); });
 
 /* رسالة التحديث: بنقارن رقم النسخة اللي شغالة برقم النسخة المنشورة (version.json) */
-const APP_VERSION = '2026-11-03-a';
+const APP_VERSION = '2026-11-03-b';
 async function checkUpdate(){
   try {
     const r = await fetch('version.json?t=' + Date.now(), {cache:'no-store'});
