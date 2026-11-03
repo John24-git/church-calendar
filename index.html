@@ -125,6 +125,24 @@ button{font:inherit;color:inherit;cursor:pointer}
   .usr-t{display:none}
 }
 
+.cal-head{position:relative}
+.mtitle{font:inherit;color:inherit;background:none;border:none;padding:0;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.mtitle::after{content:"▾";font-size:.9rem;color:var(--gold-deep)}
+.mpick{position:absolute;inset-inline-start:0;top:100%;z-index:5;display:flex;gap:8px;align-items:center;background:var(--surface);border:1px solid var(--gold);border-radius:8px;padding:10px;box-shadow:0 6px 20px rgba(0,0,0,.15)}
+.mpick[hidden]{display:none}
+.mpick select{width:auto;min-width:6.5rem}
+.ocn{font-size:.68rem;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.ocn.hol,.num.hol{color:#a4262c}
+.ocn.feast,.num.feast{color:var(--gold-deep)}
+.ocn.fast{color:#6b4c8a}
+.day.today .num.hol,.day.today .num.feast{color:var(--brand-fg)}
+.occs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.occ{font-size:.82rem;padding:2px 10px;border-radius:99px;border:1px solid currentColor}
+.occ.hol{color:#a4262c;background:#fbeaea}
+.occ.feast{color:#7a5a12;background:#fbf3dc}
+.occ.fast{color:#6b4c8a;background:#f1ebf7}
+@media(min-width:641px){.legend{display:none}}
+@media(max-width:640px){.ocn{display:none}}
 .legend{display:flex;flex-wrap:wrap;gap:6px 10px;margin-top:14px;font-size:.8rem;color:var(--muted)}
 .legend span{display:inline-flex;align-items:center;gap:5px}
 .legend i{width:.7rem;height:.7rem;border-radius:3px;background:hsl(var(--h) 60% 52%)}
@@ -221,7 +239,11 @@ footer input{width:11rem}
   <div class="main">
     <section class="panel" aria-label="الأجندة">
       <div class="cal-head">
-        <h2 id="monthTitle"></h2>
+        <h2><button class="mtitle" id="monthTitle" type="button" aria-haspopup="true" aria-expanded="false" aria-label="اختار شهر وسنة"></button></h2>
+        <div class="mpick" id="monthPick" hidden>
+          <select id="pickM" aria-label="الشهر"></select>
+          <select id="pickY" aria-label="السنة"></select>
+        </div>
         <div class="cal-tools">
           <button class="btn primary sm" id="newBtn" type="button" hidden>+ حجز جديد</button>
           <div class="nav">
@@ -379,6 +401,7 @@ footer input{width:11rem}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="config.js"></script>
 <script src="pw.js"></script>
+<script src="occasions.js"></script>
 <script>
 let ACTIVITIES = ['رحلة','كورس','خلوة','معسكر','مؤتمر','حفلة','مسرح','يوم روحي','يوم رياضي','كرنفال','قافلة'];
 const MONTHS = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
@@ -550,6 +573,7 @@ function renderCheck(){
 
 function renderCal(){
   $('monthTitle').textContent = `${MONTHS[view.getMonth()]} ${nf.format(view.getFullYear())}`;
+  syncPicker();
   const first = new Date(view.getFullYear(), view.getMonth(), 1);
   const offset = (first.getDay()+1)%7; // الأسبوع بيبدأ من السبت
   const start = new Date(first); start.setDate(1-offset);
@@ -561,9 +585,11 @@ function renderCal(){
     const k = iso(d), list = dayList(k), locked = list.some(b=>b.service==='dia' && b.status!=='pending');
     const cls = ['day', d.getMonth()!==view.getMonth()?'out':'', k<t?'past':'', k===t?'today':'', k===sel?'sel':'', locked?'locked':''].join(' ');
     const shown = list.slice(0,3);
-    const label = `${longDate(k)}${list.length?`، ${nf.format(list.length)} حجز`:''}${locked?'، يوم الشماسية':''}`;
+    const oc = occasionsOn(k), ot = oc.some(o=>o.t==='hol') ? 'hol' : oc.some(o=>o.t==='feast') ? 'feast' : oc.length ? 'fast' : '';
+    const label = `${longDate(k)}${oc.length?`، ${oc.map(o=>o.n).join('، ')}`:''}${list.length?`، ${nf.format(list.length)} حجز`:''}${locked?'، يوم الشماسية':''}`;
     html += `<button type="button" class="${cls}" data-d="${k}" aria-label="${label}">
-      <span class="num">${nf.format(d.getDate())}</span>
+      <span class="num ${ot==='fast'?'':ot}">${nf.format(d.getDate())}</span>
+      ${oc.length?`<span class="ocn ${ot}" title="${esc(oc.map(o=>o.n).join('، '))}">${esc(oc[0].n)}</span>`:''}
       <span class="chips">${shown.map(b=>`<span class="chip${b.status==='pending'?' pend':''}" style="--h:${SV[b.service]?.h??0}">${sname(b.service)}</span>`).join('')}${list.length>3?`<span class="more">+${nf.format(list.length-3)}</span>`:''}</span>
     </button>`;
   }
@@ -573,9 +599,10 @@ function renderCal(){
 function renderDay(){
   $('dayTitle').textContent = longDate(sel);
   const list = dayList(sel);
-  if (!list.length){ $('dayBody').innerHTML = `<p class="empty free">${loaded?'مفيش حجوزات في اليوم ده.':''}</p>`; return; }
+  const occHtml = occasionsOn(sel).length ? '<div class="occs">' + occasionsOn(sel).map(o=>`<span class="occ ${o.t}">${esc(o.n)}${o.approx?' (تقريبي)':''}</span>`).join('') + '</div>' : '';
+  if (!list.length){ $('dayBody').innerHTML = occHtml + `<p class="empty free">${loaded?'مفيش حجوزات في اليوم ده.':''}</p>`; return; }
   const past = sel < todayIso();
-  $('dayBody').innerHTML = '<ul>' + list.map(b=>{
+  $('dayBody').innerHTML = occHtml + '<ul>' + list.map(b=>{
     const edit = (!b.virtual && b.canEdit && !past) ? `<button class="lnk" type="button" data-edit="${esc(b.id)}">تعديل</button>` : '';
     const cbtn = (all,label) => `<button class="lnk danger" type="button" data-cancel="${esc(b.id)}" data-all="${all?1:0}">${pendingCancel===b.id+(all?':all':'')?'اضغط تاني للتأكيد':label}</button>`;
     const cancel = (!b.virtual && b.canCancel) ? (b.group ? cbtn(false,'إلغاء اليوم ده')+cbtn(true,'إلغاء كل الأيام') : cbtn(false,'إلغاء الحجز')) : '';
@@ -683,6 +710,21 @@ async function loadMe(){
 }
 
 $('grid').addEventListener('click', e=>{ const b=e.target.closest('[data-d]'); if(b) select(b.dataset.d, true); });
+function syncPicker(){
+  const yNow = new Date().getFullYear(), y = view.getFullYear();
+  const from = Math.min(yNow - 2, y), to = Math.max(yNow + 6, y);
+  if ($('pickM').options.length !== 12) $('pickM').innerHTML = MONTHS.map((m,i)=>`<option value="${i}">${m}</option>`).join('');
+  const ys = []; for (let i=from;i<=to;i++) ys.push(i);
+  if ($('pickY').dataset.r !== from + '-' + to) { $('pickY').innerHTML = ys.map(i=>`<option value="${i}">${nf.format(i)}</option>`).join(''); $('pickY').dataset.r = from + '-' + to; }
+  $('pickM').value = String(view.getMonth()); $('pickY').value = String(y);
+}
+const pickToggle = open => { $('monthPick').hidden = !open; $('monthTitle').setAttribute('aria-expanded', String(open)); };
+$('monthTitle').onclick = e=>{ e.stopPropagation(); pickToggle($('monthPick').hidden); };
+$('monthPick').addEventListener('click', e=>e.stopPropagation());
+const pickGo = ()=>{ view = new Date(+$('pickY').value, +$('pickM').value, 1); renderCal(); };
+$('pickM').onchange = $('pickY').onchange = pickGo;
+document.addEventListener('click', ()=>pickToggle(false));
+document.addEventListener('keydown', e=>{ if (e.key==='Escape') pickToggle(false); });
 $('prev').onclick = ()=>{ view = new Date(view.getFullYear(), view.getMonth()-1, 1); renderCal(); };
 $('next').onclick = ()=>{ view = new Date(view.getFullYear(), view.getMonth()+1, 1); renderCal(); };
 $('today').onclick = ()=>{ view = new Date(); view.setDate(1); select(todayIso(), true); };
